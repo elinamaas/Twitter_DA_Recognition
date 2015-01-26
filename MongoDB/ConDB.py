@@ -9,17 +9,21 @@ from pymongo import Connection
 # The DB will be schown firstly if there is smth already
 
 
-def mongoDbConnection(collectionName):
+def getCollection(dbName, collectionName):
     # default connection
     connection = Connection()
+    # drop Db
+    #connection.drop_database(dbName)
     # Getting/Creating  DB
-    db = connection['DARecognition']
+
+    db = connection[dbName]
     # Getting/Creating Collection
     collection = db[collectionName]
     return collection
 
-# ####Insert data into collection ####
-# collection.insert({"twitterId" : "11111", "text": "blablabla"})
-# collection.insert({"twitterId" : "122222", "text": "bleeeebla"})
 
-# #### Delete unnesessary DB ####
+def checkAmount(dbName, collectionName):
+    connection = Connection()
+    db = connection[dbName]
+    collection = db[collectionName]
+    return collection.count()

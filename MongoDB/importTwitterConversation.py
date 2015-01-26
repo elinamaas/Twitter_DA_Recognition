@@ -3,10 +3,11 @@ import re
 import json
 
 
-def importData(collectionName, data):
-    collection = conDB.mongoDbConnection(collectionName)
+def importData(dbName, collectionName, data):
+    collection = conDB.getCollection(dbName, collectionName)
     for tweet in iterparse(data):
         collection.insert(tweet)
+
 
 nonspace = re.compile(r'\S')
 
