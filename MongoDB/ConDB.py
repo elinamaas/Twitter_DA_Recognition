@@ -1,3 +1,4 @@
+__author__ = 'snownettle'
 import pymongo
 from pymongo import Connection
 
@@ -9,7 +10,7 @@ from pymongo import Connection
 # The DB will be schown firstly if there is smth already
 
 
-def getCollection(dbName, collectionName):
+def get_collection(dbName, collectionName):
     # default connection
     connection = Connection()
     # drop Db
@@ -22,8 +23,5 @@ def getCollection(dbName, collectionName):
     return collection
 
 
-def checkAmount(dbName, collectionName):
-    connection = Connection()
-    db = connection[dbName]
-    collection = db[collectionName]
-    return collection.count()
+def check_tweets_amount(collectionName):
+    return collectionName.count()
