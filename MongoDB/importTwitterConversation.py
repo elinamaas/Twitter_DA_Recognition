@@ -3,8 +3,7 @@ import re
 import json
 
 
-def importData(dbName, collectionName, data):
-    collection = conDB.getCollection(dbName, collectionName)
+def importData(collection, data):
     for tweet in iterparse(data):
         collection.insert(tweet)
 
