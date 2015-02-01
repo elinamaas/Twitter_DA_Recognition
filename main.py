@@ -23,10 +23,10 @@ if conDB.check_tweets_amount(collectionRawTwitterData) == 0:
     #     importTwitterConversation.importData(collectionRawTwitterData, content)
     #     print filename + ' is added to DB'
 else:
-    print 'collection ' + collectionRawTwitterData.name + ' is already existed'
+    print 'Collection ' + collectionRawTwitterData.name + ' is already existed'
 
 amountOfRawTweets = conDB.check_tweets_amount(collectionRawTwitterData)
-print 'There are ',  amountOfRawTweets, ' tweets in DB.'
+print 'There are ',  amountOfRawTweets, ' raw tweets in DB.'
 # queries.search_first_tweet(database, collectionRawTwitterData)
 #conversations = queries.check_lang(database, collectionRawTwitterData)
 # conversations = queries.build_conversation(collectionRawTwitterData)
@@ -35,6 +35,7 @@ print 'There are ',  amountOfRawTweets, ' tweets in DB.'
 if conDB.check_tweets_amount((collectionAnnotatedData)) == 0:
     annotatedData.read_annotated_docs(annotatedData_path, collectionRawTwitterData, collectionAnnotatedData)
 else:
-    print 'collection ' + collectionAnnotatedData + ' is already existed'
+    print 'Collection ' + collectionAnnotatedData.name + ' is already existed'
 amountOdAnnotatedTweets = conDB.check_tweets_amount(collectionAnnotatedData)
+print 'There are ', amountOdAnnotatedTweets, ' annotated tweets by linguistic students in DB'
 
