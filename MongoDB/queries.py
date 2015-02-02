@@ -38,6 +38,15 @@ def search_replays(tweet, collection):
             tweet.set_replay(tweet_replay)
             tweet_replay = search_replays(tweet_replay, collection)
         return tweet
+
+
+def find_all(collection):
+    return collection.find()
+
+
+def find_by_id(collection, record):
+    return collection.find({'tweet_id': record['tweet_id']})
+
 # def search_root_tweets(raw_tweets_collection):
 #     return raw_tweets_collection.find({'in_reply_to_status_id': None})
 #

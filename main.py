@@ -1,6 +1,7 @@
 __author__ = 'snownettle'
-from readData import rawTwitterData, annotatedData
-from mongoDB import conDB,importTwitterConversation, queries
+from readData import rawTwitterData, annotatedData_read
+from mongoDB import conDB, importTwitterConversation, queries
+from statistics import annotatedData_stat
 import glob
 import os
 import tweet
@@ -32,10 +33,13 @@ print 'There are ',  amountOfRawTweets, ' raw tweets in DB.'
 # conversations = queries.build_conversation(collectionRawTwitterData)
 # for conversation in conversations:
 #     conversation.conversation_length()
+collectionAnnotatedData.drop()
 if conDB.check_tweets_amount((collectionAnnotatedData)) == 0:
-    annotatedData.read_annotated_docs(annotatedData_path, collectionRawTwitterData, collectionAnnotatedData)
+    annotatedData_read.read_annotated_docs(annotatedData_path, collectionRawTwitterData, collectionAnnotatedData)
 else:
     print 'Collection ' + collectionAnnotatedData.name + ' is already existed'
 amountOdAnnotatedTweets = conDB.check_tweets_amount(collectionAnnotatedData)
 print 'There are ', amountOdAnnotatedTweets, ' annotated tweets by linguistic students in DB'
+
+annotatedData_stat.segmentation(collectionAnnotatedData)
 
