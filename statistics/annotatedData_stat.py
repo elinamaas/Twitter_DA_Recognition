@@ -8,7 +8,7 @@ class Segmentation:
     def __init__(self, tweet_id):
         self.tweet_id = tweet_id
         self.segmentation = {}
-        
+        self.tags = {}
 
     @staticmethod
     def add_offset(tweet, offset):
@@ -18,6 +18,19 @@ class Segmentation:
         else:
             #tweet.segmentation[0] = offset
             tweet.segmentation[offset] = 1
+
+    @staticmethod
+    def add_tags(tweet, offset, tag):
+        value = {}
+        if offset in tweet.tags:
+            value = tweet.tags[offset]
+            if tag in value:
+                value[tag] += 1
+            else:
+                value[tag] = 1
+        else:
+            value[tag] = 1
+            tweet.tags[offset] = value
 
     @staticmethod
     def find_tweet_by_id(tweet_id, list_of_tweets):
@@ -38,6 +51,8 @@ def segmentation(collection):
         list_of_offsets = search_offsets(record)
         for offset in list_of_offsets:
             Segmentation.add_offset(tweets_segmentation, offset)
+            tag = search_tag(record, offset)
+            Segmentation.add_tags(tweets_segmentation, offset, tag)
         if len(list_of_segmentations) == 0:
             list_of_segmentations.append(tweets_segmentation)
         else:
@@ -45,11 +60,37 @@ def segmentation(collection):
                 list_of_segmentations.append(tweets_segmentation)
     #print len(list_of_segmentations)
     calculate_stat_segment(list_of_segmentations)
+    calculate_stat_tag(list_of_segmentations)
+
+
+def calculate_stat_tag(list_of_segmentations):
+    i = 0
+    j = 0
+    k = 0
+    for tweet in list_of_segmentations:
+        tags = tweet.tags.values()
+        for tag in tags:
+            values = tag.values()
+            for value in values:
+                if value == 3:
+                    i += 1
+                elif value == 2:
+                    j += 1
+                elif value == 1:
+                    k += 1
+    print 'tags'
+    print '3 students: ', i
+    print '2 students: ', j
+    print '1 student: ', k
+
+
+
 
 
 def calculate_stat_segment(list_of_segmentations):
     i = 0
-    j= 0
+    j = 0
+    k = 0
     for tweet in list_of_segmentations:
         values = tweet.segmentation.values()
         for value in values:
@@ -57,8 +98,12 @@ def calculate_stat_segment(list_of_segmentations):
                 i += 1
             elif value == 2:
                 j += 1
+            elif value == 1:
+                k += 1
+    print 'segmenatation:'
     print '3 students: ', i
     print '2 student: ', j
+    print '1 student: ', k
 
 def search_offsets(record):
     previous_tag = ' '
@@ -87,3 +132,7 @@ def search_offsets(record):
     return list_of_offsets
 
 
+def search_tag(record, offset):
+    key_value = offset.split(':')[0]
+    tag = record[key_value][1].encode('utf-8')
+    return tag
