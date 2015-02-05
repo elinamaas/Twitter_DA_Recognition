@@ -33,13 +33,16 @@ print 'There are ',  amountOfRawTweets, ' raw tweets in DB.'
 # conversations = queries.build_conversation(collectionRawTwitterData)
 # for conversation in conversations:
 #     conversation.conversation_length()
-collectionAnnotatedData.drop()
-if conDB.check_tweets_amount((collectionAnnotatedData)) == 0:
-    annotatedData_read.read_annotated_docs(annotatedData_path, collectionRawTwitterData, collectionAnnotatedData)
+
+
+# collectionAnnotatedData.drop()
+
+if conDB.check_tweets_amount(collectionAnnotatedData) == 0:
+    annotatedData_read.read_annotated_docs(annotatedData_path, collectionAnnotatedData)
 else:
     print 'Collection ' + collectionAnnotatedData.name + ' is already existed'
 amountOdAnnotatedTweets = conDB.check_tweets_amount(collectionAnnotatedData)
-print 'There are ', amountOdAnnotatedTweets, ' annotated tweets by linguistic students in DB'
+# print 'There are ', amountOdAnnotatedTweets, ' annotated tweets by linguistic students in DB'
 
 annotatedData_stat.segmentation(collectionAnnotatedData)
 
