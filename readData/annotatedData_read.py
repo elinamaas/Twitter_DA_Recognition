@@ -32,7 +32,7 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                         if '#id' in row[0]:
                             conversation_id = re.split('id=', row[0])[1]
                             data = {}
-                            data['conversation_id'] = conversation_id
+                            data['conversation_id'] =conversation_id
                         elif check_if_consistent(row) is False:
                             conversation_id = '1'
                         elif conversation_id == '1':
@@ -42,6 +42,9 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                             tweet_id = re.split(' user', tweet_id)[0]
                             data['tweet_id'] = tweet_id
                             data['text'] = row[0]
+                            text_id = re.split('#text=', row[0])[1]
+                            text_id = re.split('id=', text_id)[0]
+                            data['text_id'] = text_id
                         elif conversation_id == re.split('-', row[0])[0]  \
                                 and re.split('-', row[0])[1] not in ['1', '2', '3'] and len(row) > 3:
                             if 'user=' in row[1] or '@' in row[1]:
