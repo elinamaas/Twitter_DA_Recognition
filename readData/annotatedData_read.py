@@ -15,7 +15,6 @@ def read_annotated_docs(directory_path, collection_annotated_data):
     for directory_name in glob.iglob(os.path.join(directory_path,'*.*')):
         for filename in glob.iglob(os.path.join(directory_name, '*.tsv')):
             with open(filename) as f:
-                #print filename
                 content = csv.reader(f, delimiter='\t')
                 previous_row = ' '
                 for row in content:

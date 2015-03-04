@@ -1,12 +1,12 @@
 __author__ = 'snownettle'
 # get first document form the collection
-import conDB
+import mongoDB_configuration
 import json
 from tweet import Tweet
 
 
 def search_first_tweet(db_name, collection_name):
-    tweets_collection = conDB.get_collection(db_name, collection_name)
+    tweets_collection = mongoDB_configuration.get_collection(db_name, collection_name)
     tweet = tweets_collection.find_one()
     print tweet
 
