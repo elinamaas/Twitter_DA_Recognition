@@ -14,11 +14,11 @@ def numbers_of_tweets_agreed_by_three(list_of_tweets):
         segmentation_values = segmentation_dictionary.values()
         if 2 not in segmentation_values and 1 not in segmentation_values:
             agreed_with_segmentation += 1
-            token_dictionary = tweet.get_token()
+            token_dictionary = tweet.get_tags()
             token_number = len(token_dictionary)
             for offset, tags in token_dictionary.iteritems():
                 if len(tags) == 1:
-                    for tag_name, agreed in tags[0].iteritems():
+                    for tag_name, agreed in tags.iteritems():
                         if agreed == 3:
                             same_dicision += 1
             if same_dicision == token_number:
@@ -34,13 +34,13 @@ def numbers_of_agreed_tweets_after_merging(list_of_tweets):
     list_of_tweets_done = list()
     for tweet in list_of_tweets:
         same_dicision = 0
-        token_dictionary = tweet.get_token()
+        token_dictionary = tweet.get_tags()
         token_number = len(token_dictionary)
         for offset, tags in token_dictionary.iteritems():
             if len(tags) == 1:
-                for tag_name, agreed in tags[0].iteritems():
-                    if agreed == 3:
-                        same_dicision += 1
+                for tag_name, agreed in tags.iteritems():
+                    # if agreed == 3:
+                    same_dicision += 1
         if same_dicision == token_number:
             argeed_with_tags += 1
             list_of_tweets_done.append(tweet)
@@ -49,6 +49,6 @@ def numbers_of_agreed_tweets_after_merging(list_of_tweets):
             list_of_tweets_for_editing.append(tweet)
     print 'After merging there are ' + str(len(list_of_tweets_done)) + ' done tweets'
     print 'There are ' + str(len(list_of_tweets_for_editing)) + ' to edit'
-    return list_of_tweets_for_editing
+    return list_of_tweets_done, list_of_tweets_for_editing
 
 
