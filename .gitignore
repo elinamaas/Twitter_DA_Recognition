@@ -3,3 +3,4 @@
 DATA
 tweet_to_edit.csv
 __init__.py
+done_tweet.csv
