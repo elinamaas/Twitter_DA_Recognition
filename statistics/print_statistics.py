@@ -1,10 +1,11 @@
 __author__ = 'snownettle'
 import rawData_stat
-from twitter import conversation
+from twitter_objects import conversation
 from mongoDB import mongoDB_configuration
 import annotatedData_stat
 from annotatedData.editing_annotated_tweets import segmentation, merge_annotations, rewrite_segmentation, merge_da_children
 from annotation.dialogue_acts_tree import build_da_taxonomy
+from annotatedData.tweets_after_editing import write_to_xlsx_file
 
 
 def stats_for_raw_data():
@@ -47,10 +48,12 @@ def stats_for_annotated_data():
     list_of_tweets_done, list_of_tweets_for_editing = annotatedData_stat.numbers_of_agreed_tweets_after_merging(list_of_annotated_tweets)
 
     annotatedData_stat.segments_in_tweet(list_of_tweets_done)
+    write_to_xlsx_file(list_of_tweets_for_editing, '../DATA/tweet_to_edit.xlsx')
+    write_to_xlsx_file(list_of_tweets_done, '../DATA/done_tweet.xlsx')
 
-# print 'Stats for annotated data:'
-# stats_for_annotated_data()
-print 'Stats for raw data: '
-stats_for_raw_data()
+print 'Stats for annotated data:'
+stats_for_annotated_data()
+# print 'Stats for raw data: '
+# stats_for_raw_data()
 
 
