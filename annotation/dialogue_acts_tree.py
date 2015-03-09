@@ -1,24 +1,12 @@
 __author__ = 'snownettle'
 
 
-from treelib import Node, Tree
-
-# tree = Tree()
-# tree.create_node("Harry", "harry")  # root node
-# tree.create_node("Jane", "jane", parent="harry")
-# tree.create_node("Bill", "bill", parent="harry")
-# tree.create_node("Diane", "diane", parent="jane")
-# tree.create_node("Mary", "mary", parent="diane")
-# tree.create_node("Mark", "mark", parent="jane")
-# tree.show()
+from treelib import Tree
 
 
 def build_da_taxonomy():
     da_taxonomy = Tree()
-
-
     da_taxonomy.create_node('DIT++ Taxonomy', 'DIT++ Taxonomy')
-
 
     da_taxonomy.create_node('ADF', 'ADF', parent='DIT++ Taxonomy')
 
@@ -108,6 +96,7 @@ def build_da_taxonomy():
     da_taxonomy.create_node('0', '0', parent='DIT++ Taxonomy')
 
     #da_taxonomy.show()
+    #print da_taxonomy.depth()
     return da_taxonomy
 
 
@@ -130,15 +119,8 @@ def check_related_tags(taxonomy, tag1, tag2):
     else:
         return None
 
-# for child in tree.is_branch('diane'):
-#     print(tree[child].tag)
 
-#print tree["jane"].parent
-#print tree.parent("jane").tag #show parent
-
-
-
-
+build_da_taxonomy()
 
 
 

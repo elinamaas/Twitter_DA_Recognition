@@ -2,7 +2,8 @@ __author__ = 'snownettle'
 # get first document form the collection
 import mongoDB_configuration
 import json
-from tweet import Tweet
+from twitter.tweet import Tweet
+import pymongo
 
 
 def search_first_tweet(db_name, collection_name):
@@ -16,28 +17,18 @@ def check_lang(tweets_collection):
     print tweets_collection.find({'lang':'en'}).count()
 
 
-def build_conversation(collection):
-    conversation_list = []
-    root_tweets = collection.find({'in_reply_to_status_id': None})
-    #print 'root_tweets: ', root_tweets.count()
-    for root_tweet in root_tweets:
-        tweet = Tweet(root_tweet['id'])
-        tweet = search_replays(tweet, collection)
-        conversation_list.append(tweet)
-    return conversation_list
+def search_root_tweets(collection):
+    return collection.find({'in_reply_to_status_id': None})
 
 
-def search_replays(tweet, collection):
-    replays = collection.find({'in_reply_to_status_id': tweet.get_id()})
-    print 'replays: ', replays.count()
-    if replays is None:
-        return tweet
-    else:
-        for replay in replays:
-            tweet_replay = Tweet(replay['id'])
-            tweet.set_replay(tweet_replay)
-            tweet_replay = search_replays(tweet_replay, collection)
-        return tweet
+# def build_conversation(collection):
+#     conversation_list = []
+#     root_tweets = search_root_tweets(collection)
+#     for root_tweet in root_tweets:
+#         tweet = Tweet(root_tweet['id'])
+#         tweet = search_replays(tweet, collection)
+#         conversation_list.append(tweet)
+#     return conversation_list
 
 
 def find_all(collection):
@@ -47,8 +38,17 @@ def find_all(collection):
 def find_by_id(collection, record):
     return collection.find({'tweet_id': record['tweet_id']})
 
-# def search_root_tweets(raw_tweets_collection):
-#     return raw_tweets_collection.find({'in_reply_to_status_id': None})
+
+def search_replays(collection, tweet_id):
+    replays = collection.find({'in_reply_to_status_id': tweet_id})
+    if replays.count() != 0:
+        return replays
+    else:
+        return None
+
+
+def check_tweets_amount(collectionName):
+    return collectionName.count()
 #
 #
 # def build_conversation_for_roots(raw_tweets_collection, root_tweets, conversation_list):
@@ -76,12 +76,7 @@ def find_by_id(collection, record):
 #     collection.find({'id': tweet_id})
 #
 #
-# def search_replays(collection, tweet_id):
-#     replays = collection.find({'in_reply_to_status_id': tweet_id})
-#     if replays.count() != 0:
-#         return replays
-#     else:
-#         return None
+
 #
 #
 # def search_replays_to_replay(collection, tweet_id):

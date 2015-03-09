@@ -18,15 +18,12 @@ def write_to_file(list_of_tweets, file_name):
                 word = tweet.get_word(offset)
                 word = word.encode('utf-8')
                 if len(tags_list) == 1:
-                    # if 3 in tags_list[0].values():
                     for tag_name, value in tags_list.iteritems():
-                        # if value == 3:
                         spamwriter.writerow([offset, word, '-', '-', '-', '-', tag_name])
                 else:
                     data = list()
                     data.append(offset)
                     data.append(word)
-                    # for tag in tags_list:
                     for tag_name, value in tags_list.iteritems():
                         data.append(tag_name)
                     spamwriter.writerow(data)
