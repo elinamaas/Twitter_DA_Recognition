@@ -44,10 +44,10 @@ def build_conversation(collection):
 
         else:
             ids_list.append(tweet_id)
-            tweet = Tweet(tweet_id)
-            tweets_list.add(tweet)
-            conversation = Conversation(tweet)
-            find_replays(collection, tweet, tweets_list, conversation, ids_list)
+            # tweet = Tweet(tweet_id)
+            tweets_list.add(tweet_id)
+            conversation = Conversation(tweet_id)
+            find_replays(collection, tweet_id, tweets_list, conversation, ids_list)
             # if len(replays_list) != 0:
             #     for replay in replays_list:
             # conversation.add_replay(replay, tweet)
@@ -66,7 +66,7 @@ def build_conversation(collection):
 
 
 def find_replays(collection, tweet, tweets_list, conversation, ids_list):
-    replays = queries.search_replays(collection, tweet.get_tweet_id())
+    replays = queries.search_replays(collection, tweet)
     # replays_list = set()
     if replays is not None:
         for replay in replays:
@@ -79,7 +79,7 @@ def find_replays(collection, tweet, tweets_list, conversation, ids_list):
 
             else:
                 ids_list.append(tweet_id)
-                new_tweet = Tweet(tweet_id)
+                new_tweet = tweet_id
                 tweets_list.add(new_tweet)
                 # tweet.add_replay(new_tweet)
                 # replays_list.add(new_tweet)
