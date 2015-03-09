@@ -12,6 +12,7 @@ def read_annotated_docs(directory_path, collection_annotated_data):
     conversation_id = 0
     data = {}
     id = 1
+    previous_tag = ''
     for directory_name in glob.iglob(os.path.join(directory_path,'*.*')):
         for filename in glob.iglob(os.path.join(directory_name, '*.tsv')):
             with open(filename) as f:
@@ -46,10 +47,17 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                             data['text_id'] = text_id
                         elif conversation_id == re.split('-', row[0])[0]  \
                                 and re.split('-', row[0])[1] not in ['1', '2', '3'] and len(row) > 3:
-                            if 'user=' in row[1] or '@' in row[1]:
-                                token = row[1]
-                                tag = '0'
-                                data[re.split('-', row[0])[1]] = [token, tag]
+                            if '@' in row[1]:
+                                test = row[0].split('-')[1]
+                                if row[0].split('-')[1] == '4':
+                                    tag = '0'
+                                    data[re.split('-', row[0])[1]] = [token, tag]
+                                elif '@' in previous_row[1] and previous_tag == '0':
+                                    tag = '0'
+                                    data[re.split('-', row[0])[1]] = [token, tag]
+                                else:
+                                    tag = row[2]
+                                    data[re.split('-', row[0])[1]] = [token, tag]
                             else:
                                 token = row[1]
                                 # token = row[1].replace('.', '_')
@@ -59,6 +67,7 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                                 else:
                                     tag = row[2]
                                 data[re.split('-', row[0])[1]] = [token, tag]
+                            previous_tag = tag
                         elif len(row) < 3:
                             conversation_id = 1
 
