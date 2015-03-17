@@ -5,6 +5,7 @@ Requerments
 
 MongoDB (path, ports)
 psycorg (pip install psycopg2)
+tweepy
 csv
 ete2 (download from https://pypi.python.org/pypi/ete2/; python setup.py install)
 mysql (brew install mysql
