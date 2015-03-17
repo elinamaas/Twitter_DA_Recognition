@@ -97,6 +97,7 @@ def build_da_taxonomy():
 
     #da_taxonomy.show()
     #print da_taxonomy.depth()
+    # print da_taxonomy.is_branch('DIT++ Taxonomy')
     return da_taxonomy
 
 
@@ -120,7 +121,8 @@ def check_related_tags(taxonomy, tag1, tag2):
         return None
 
 
-build_da_taxonomy()
+tree = build_da_taxonomy()
+print len(tree.all_nodes())
 
 
 
