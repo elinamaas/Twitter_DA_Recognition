@@ -2,7 +2,7 @@ __author__ = 'snownettle'
 # get first document form the collection
 import mongoDB_configuration
 import json
-from twitter.tweet import Tweet
+from twitter_objects.tweet import Tweet
 import pymongo
 
 
@@ -32,11 +32,11 @@ def search_root_tweets(collection):
 
 
 def find_all(collection):
-    return collection.find()
+    return collection.find(timeout=False)
 
 
-def find_by_id(collection, record):
-    return collection.find({'tweet_id': record['tweet_id']})
+def find_by_id(collection, tweet_id):
+    return collection.find({'tweet_id': tweet_id})
 
 
 def search_replays(collection, tweet_id):
