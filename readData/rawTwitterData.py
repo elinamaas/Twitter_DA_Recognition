@@ -1,18 +1,14 @@
 __author__ = 'snownettle'
 import glob
 import os
-from mongoDB import  importTwitterConversation
+from mongoDB import importData
+from general import read_file
 
 
-def import_raw_twitter_data(directory_path, collectionRawTwitterData):
+def import_raw_twitter_data(directory_path, collection):
     for filename in glob.iglob(os.path.join(directory_path,'*.txt')):
-            content = readTXT(filename)
+            content = read_file.readTXT(filename)
             print filename + ' will be added to DB'
-            importTwitterConversation.importData(collectionRawTwitterData, content)
+            importData.import_from_file(collection, content)
             print filename + ' is added to DB'
 
-
-def readTXT(fileName):
-    with open(fileName) as f:
-        content = f.read()
-        return content

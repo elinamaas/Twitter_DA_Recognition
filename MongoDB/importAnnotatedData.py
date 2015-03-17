@@ -1,5 +1,5 @@
-__author__ = 'snownettle'
-
-
-def importAnnotatedData(data, collection):
-    collection.insert(data)
+# __author__ = 'snownettle'
+#
+#
+# def importAnnotatedData(data, collection):
+#     collection.insert(data)

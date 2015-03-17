@@ -3,9 +3,8 @@ import glob
 import os
 import csv
 import re
-import convertCharacters
-from json import JSONEncoder
-from mongoDB import importAnnotatedData
+
+from mongoDB import importData
 
 
 def read_annotated_docs(directory_path, collection_annotated_data):
@@ -23,7 +22,7 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                         if conversation_id is not '1':
                             data['id'] = id
                             id += 1
-                            importAnnotatedData.importAnnotatedData(data, collection_annotated_data)
+                            importData.import_record(data, collection_annotated_data)
                         else:
                             continue
                     else:
@@ -72,10 +71,12 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                                     tag = row[2]
                                 data[re.split('-', row[0])[1]] = [token, tag]
                             previous_tag = tag
+
                         elif len(row) < 3:
                             conversation_id = 1
 
                     previous_row = row
+
                 #print content
 
 
