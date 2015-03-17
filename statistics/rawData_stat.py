@@ -1,6 +1,6 @@
 __author__ = 'snownettle'
 # from __future__ import division
-from twitter import conversation
+from twitter_objects import conversation
 from mongoDB import mongoDB_configuration
 
 
@@ -29,6 +29,18 @@ def depth_of_conversation(conversation_list):
             depth_dict[depth] = 1
     for conversation_depth, value in depth_dict.iteritems():
         print 'conversation depth:' + str(conversation_depth) + ' number of conversations: ' + str(value)
+
+
+def width_of_conversation(conversation_list):
+    width_dict = dict()
+    for discussion in conversation_list:
+        widht = discussion.find_width()
+        if widht in width_dict:
+            width_dict[widht] += 1
+        else:
+            width_dict[widht] = 1
+    for conversation_width, value in width_dict.iteritems():
+        print 'conversation width:' + str(conversation_width) + ' number of conversations: ' + str(value)
 
 
 def longest_conversation(conversation_list):
