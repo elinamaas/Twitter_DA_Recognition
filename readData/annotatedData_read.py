@@ -93,109 +93,60 @@ def check_if_consistent(row):
         return True
 
 
-def assign_end_label(current_tag, next_tag):
-    current_tag = re.split('-', current_tag)[1]
-    if next_tag != 'O':
-        next_tag = re.split('-', next_tag)[1]
-    elif next_tag == 'O':
-        next_tag = '0'
-    if current_tag != next_tag:
-        return True
-    else:
-        return False
-
-
-def disambiguation_tags(tags, next_raw):
+def disambiguation_tags(tags, next_raw, previous_row, previous_tags):
+    #check iif previous row has @ - assign begin label
     new_previous_tags = list()
     tags_list = tags.split('|')
     add_end_label = list()
     new_current_tags = list()
-    next_tags = list()
-    if len(next_raw) == 0:
-        next_tags.append('O')
-    else:
-        if '|' in next_raw[2]:
-            next_tags = next_raw[2].split('|')
-        else:
-            next_tags.append(next_raw[2])
 
+    assign_begin_tag = check_user_mentioned(previous_row, previous_tags)
     for current_tag in tags_list:
-        if len(next_tags) == 1:
-            if assign_end_label(current_tag, next_tags[0]) is True:
-                current_tag = 'E-' + re.split('-', current_tag)[1]
-                new_previous_tags.append(current_tag)
-                new_current_tags.append(current_tag)
-            else:
-                new_current_tags.append(current_tag)
+        if current_tag != 'O-_':
+            current_tag = check_next_tags(current_tag, next_raw)
+            if assign_begin_tag is True:
+                current_tag = 'B-' + re.split('-', current_tag)[1]
 
-        #tag_name = re.split('-', current_tag)[1]
-        else:
-            for next_tag in next_tags:
-                add_end_label.append(assign_end_label(current_tag, next_tag))
-            if True in add_end_label and False not in add_end_label:
-                current_tag = 'E-' + re.split('-', current_tag)[1]
-                new_previous_tags.append(current_tag)
-                new_current_tags.append(current_tag)
-            else:
-                new_current_tags.append(current_tag)
+            new_previous_tags.append(current_tag)
+            new_current_tags.append(current_tag)
     return new_current_tags, new_previous_tags
-
-
-def check_next_tags(current_tag, next_raw):
-    if len(next_raw) == 0:
-        return True
-    else:
-        next_tags = list()
-        if '|' in next_raw[2]:
-            next_tags = re.split('|', next_raw[2])
-        else:
-            next_tags.append(next_raw[2])
-        add_end_label = list()
-        if len(next_tags) == 0:
-            return False
-        else:
-            for next_tag in next_tags:
-                add_end_label.append(assign_end_label(current_tag, next_tag))
-            if True in add_end_label:
-                return True
-            else:
-                return False
 
 
 def assign_tags(row, previous_tags, previous_row, data, next_raw):
     token = row[1]
+    assign_begin_label = check_user_mentioned(previous_row, previous_tags)
+    tag = ''
     if '@' in token:
         if row[0].split('-')[1] == '4':
             tag = '0'
-            # data[re.split('-', row[0])[1]] = [token, tag]
         elif '@' in previous_row[1] and '0' in previous_tags:
             tag = '0'
-            # data[re.split('-', row[0])[1]] = [token, tag]
         else:
             if row[2] == 'O':
                 tag = '0'
             else:
                 if '|' in row[2]:
-                    tag, previous_tags = disambiguation_tags(row[2], next_raw)
+                    tag, previous_tags = disambiguation_tags(row[2], next_raw, previous_row, previous_tags)
                 else:
-                    if check_next_tags(row[2], next_raw) is True:
-                        tag = 'E-' + re.split('-', row[2])[1]
-                    else:
-                        tag = row[2]
-            # data[re.split('-', row[0])[1]] = [token, tag]
+                    tag = check_next_tags(row[2], next_raw)
+                    if tag == 'O-_':
+                        tag = '0'
+                    if assign_begin_label is True and tag != '0':
+                        tag = 'B-' + re.split('-', row[2])[1]
     else:
         if row[2] == 'O':
             tag = '0'
         else:
             if '|' in row[2]:
-                    tag, previous_tags = disambiguation_tags(row[2], next_raw)
+                tag, previous_tags = disambiguation_tags(row[2], next_raw, previous_row, previous_tags)
             else:
-                if check_next_tags(row[2], next_raw) is True:
-                    tag = 'E-' + re.split('-', row[2])[1]
-                else:
-                    tag = row[2]
+                tag = check_next_tags(row[2], next_raw)
+                if tag == 'O-_':
+                    tag = '0'
+                if assign_begin_label is True and tag != '0':
+                    tag = 'B-' + re.split('-', row[2])[1]
     data[re.split('-', row[0])[1]] = [token, tag]
-    if type(tag) is not list():
+    if isinstance(tag, list) is False:
         previous_tags = list()
         previous_tags.append(tag)
     return previous_tags
@@ -208,3 +159,48 @@ def check_tag(row, conversation_id):
     else:
         return False
 
+
+def check_user_mentioned(previous_row, previous_tags):
+    # assign_begin_tag = False
+    token = previous_row[1]
+    if '@' in token and '0' in previous_tags:
+        return True
+    else:
+        return False
+
+
+def check_next_tags(current_tag, next_raw):
+    if len(next_raw) == 0:
+        new_tag = 'E-' + current_tag.split('-')[1]
+    else:
+        next_tags = list()
+        if '|' in next_raw[2]:
+            next_tags = next_raw[2].split('|')
+        else:
+            next_tags.append(next_raw[2])
+        add_end_label = list()
+        if len(next_tags) == 0:
+            new_tag = 'E-' + current_tag.spilt('-')[1]
+        else:
+            if compare_tags(current_tag, next_tags) is True:
+                new_tag = current_tag
+            else:
+                new_tag = 'E-' + current_tag.split('-')[1]
+    return new_tag
+
+
+def compare_tags(current_tag, compare_to):
+    current_tag = current_tag.split('-')[1]
+    if isinstance(compare_to, list):
+        for tag in compare_to:
+            if tag != 'O':
+                tag = tag.split('-')[1]
+            if current_tag == tag:
+                return True
+    else:
+        compare_to = compare_to.split('-')[1]
+        if current_tag == compare_to:
+            return True
+        else:
+            return False
+    return False
