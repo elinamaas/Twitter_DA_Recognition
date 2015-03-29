@@ -48,28 +48,32 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                                 and re.split('-', row[0])[1] not in ['1', '2', '3'] and len(row) > 3:
                             token = row[1]
                             if '@' in token:
-                                test = row[0].split('-')[1]
+                                # test = row[0].split('-')[1]
                                 if row[0].split('-')[1] == '4':
                                     tag = '0'
-                                    data[re.split('-', row[0])[1]] = [token, tag]
+                                    # data[re.split('-', row[0])[1]] = [token, tag]
                                 elif '@' in previous_row[1] and previous_tag == '0':
                                     tag = '0'
-                                    data[re.split('-', row[0])[1]] = [token, tag]
+                                    # data[re.split('-', row[0])[1]] = [token, tag]
                                 else:
                                     if row[2] == 'O':
                                         tag = '0'
                                     else:
-                                        tag = row[2]
-                                    data[re.split('-', row[0])[1]] = [token, tag]
+                                        if previous_tag == '0':
+                                            tag = 'B-' + re.split('-', row[2])[1]
+                                        else:
+                                            tag = row[2]
+                                # data[re.split('-', row[0])[1]] = [token, tag]
                             else:
-                                # token = row[1]
-                                # token = row[1].replace('.', '_')
-                                # token = convertCharacters.replace_german_letters(row[1])
                                 if row[2] == 'O':
                                     tag = '0'
                                 else:
-                                    tag = row[2]
-                                data[re.split('-', row[0])[1]] = [token, tag]
+                                    if previous_tag == '0':
+                                        tag = 'B-' + re.split('-', row[2])[1]
+                                    else:
+                                        tag = row[2]
+
+                            data[re.split('-', row[0])[1]] = [token, tag]
                             previous_tag = tag
 
                         elif len(row) < 3:
