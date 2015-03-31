@@ -1,7 +1,7 @@
 __author__ = 'snownettle'
 from mongoDB import mongoDB_configuration
 from annotatedData.editing_annotated_tweets import segmentation, merge_annotations, \
-    rewrite_segmentation, merge_da_children
+    rewrite_segmentation, merge_da_children, check_final_segmentation
 from statistics import annotatedData_stat
 from annotation.dialogue_acts_tree import build_da_taxonomy
 from annotatedData.write_to import write_to_xlsx_file
@@ -31,6 +31,10 @@ def editing_annotated_tweets(collectionAnnotatedData):
     list_of_annotated_tweets = merge_annotations(list_of_annotated_tweets)
     rewrite_segmentation(list_of_annotated_tweets)
     list_of_tweets_done, list_of_tweets_for_editing = annotatedData_stat.numbers_of_agreed_tweets_after_merging(list_of_annotated_tweets)
+
+
+    #check segmentation
+    check_final_segmentation(list_of_tweets_done, collectionAnnotatedData)
 
     write_to_xlsx_file(list_of_tweets_for_editing, 'tweet_to_edit.csv')
     write_to_xlsx_file(list_of_tweets_done, 'done_tweet.csv')

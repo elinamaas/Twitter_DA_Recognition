@@ -15,10 +15,12 @@ def segmentation(collection):
         text_id = record['text_id']
         text = record['text']
         tweet = AnnotatedTweet.check_if_tweet_exists(list_of_tweets_with_tags, tweet_id, text_id, text)
-        tokens, segments, word_dictionary = find_tokens_segmentation(record)
+        tokens, word_dictionary, source_tags = find_tokens_segmentation(record)
         tweet = tweet.set_word(word_dictionary)
         tweet = tweet.add_tag(tokens)
-        tweet = tweet.add_segmentation(segments)
+        # tweet = tweet.add_segmentation(segments)
+        tweet.add_source_segments(source_tags) #set segmentation for raw annotated tweets
+        # tweet.set_source_segmentation()
         if tweet not in list_of_tweets_with_tags:
             list_of_tweets_with_tags.append(tweet)
     return list_of_tweets_with_tags
@@ -32,29 +34,42 @@ def find_tokens_segmentation(record):
     previous_tag = ''
     start_offset = 0
     end_offset = 0
-    tags_occuracy = defaultdict(list)
+    source_tags = defaultdict(list)
+    # tags_occuracy = defaultdict(list)
     offsets_list = list()
     for i in range(4, len(tokens)+1):
         tag = str(record[str(i)][1])
         word = record[str(i)][0]
         word_dictionary[i] = word
         if tag != '0' and '|' not in tag:
+            source_tags[tag].append(i)
             tag = re.split('-', tag)[1]
-        if '|' in tag:
-            tags_list = spilt_tags(tag)
-            tags_dictionary[i] = tags_list
-            for tag_name in tags_list:
-                tags_occuracy[tag_name].append(i)
-        elif '|' not in tag:
             if tag != '_' and tag != 'Wurst' and tag != 'NEIN' and tag != 'Ironie':
                 tags_dictionary[i] = tag
-                tags_occuracy[tag].append(i)
+                # tags_occuracy[tag].append(i)
+                source_tags[tag].append(i)
             else:
                 tags_dictionary[i] = '0'
-                tags_occuracy[tag].append(i)
+                # tags_occuracy[tag].append(i)
+                source_tags['0'].append(i)
+        elif '|' in tag:
+            source_da = tag.split('|')
+            # j = 0
+            for s in source_da:
+                source_tags[s].append(i)
 
-    offsets_list = make_segmentation_list(tags_occuracy)
-    return tags_dictionary, offsets_list, word_dictionary
+            tags_list = spilt_tags(tag)
+            tags_dictionary[i] = tags_list
+            # for tag_name in tags_list:
+            #     tags_occuracy[tag_name].append(i)
+        elif tag == '0':
+            tags_dictionary[i] = tag
+            source_tags[tag].append(i)
+
+
+
+    # offsets_list = make_segmentation_list(tags_occuracy)
+    return tags_dictionary, word_dictionary, source_tags
 
 
 def merge_annotations(tweets_list):
@@ -104,7 +119,7 @@ def spilt_tags(tags):
     tags_name = tags.split('|')
     tags_list = list()
     for i in range(0, len(tags_name)):
-        if 'O-_' != tags_name[i]:
+        if 'O-_' != tags_name[i]: #maybe '0'?
             tag_name = re.split('-', tags_name[i])[1]
             if tag_name != 'NEIN' and tag_name != 'Wurst' and tag_name != 'Ironie':
                 tags_list.append(tag_name)
@@ -207,6 +222,25 @@ def build_tag_list_for_offset(da_tags_list):
     for tag_name, count in da_tags_list.iteritems():
         tags_list.append(tag_name)
     return tags_list
+
+
+def check_final_segmentation(list_of_tweets, collection):
+    for tweet in list_of_tweets:
+        source_segmentation = tweet.get_source_segmentation()
+        current_segmentation = tweet.get_segmentation()
+        if len(current_segmentation) == 1:
+            if len(source_segmentation) == 1:
+                if list(source_segmentation)[0] in current_segmentation:
+                    print 'good'
+                else:
+                    print 'not good'
+        else:
+            print 'tweet_id: ', tweet.get_tweet_id(),  ', current_segmentation: ', current_segmentation, ', source_segmentation: ',  source_segmentation
+            #what if we have more than one?
+
+
+
+
 
 
 
