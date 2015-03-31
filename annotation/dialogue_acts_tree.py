@@ -121,8 +121,8 @@ def check_related_tags(taxonomy, tag1, tag2):
         return None
 
 
-tree = build_da_taxonomy()
-print len(tree.all_nodes())
+# tree = build_da_taxonomy()
+# print len(tree.all_nodes())
 
 
 
