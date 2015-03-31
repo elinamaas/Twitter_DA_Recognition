@@ -12,6 +12,7 @@ def read_annotated_docs(directory_path, collection_annotated_data):
     data = {}
     id = 1
     previous_tag = ''
+    tag = ''
     for directory_name in glob.iglob(os.path.join(directory_path,'*.*')):
         for filename in glob.iglob(os.path.join(directory_name, '*.tsv')):
             with open(filename) as f:
@@ -60,7 +61,15 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                                         tag = '0'
                                     else:
                                         if previous_tag == '0':
-                                            tag = 'B-' + re.split('-', row[2])[1]
+                                            if '|' in row[2]:
+                                                new_tags = re.split('|', row[2])
+                                                for new_tag in new_tags:
+                                                    if tag == '':
+                                                        tag += 'B-' + re.split('-', new_tag)[1]
+                                                    else:
+                                                        tag += '|' + 'B-' + re.split('-', new_tag)[1]
+                                            else:
+                                                tag = 'B-' + re.split('-', row[2])[1]
                                         else:
                                             tag = row[2]
                                 # data[re.split('-', row[0])[1]] = [token, tag]
@@ -69,7 +78,16 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                                     tag = '0'
                                 else:
                                     if previous_tag == '0':
-                                        tag = 'B-' + re.split('-', row[2])[1]
+                                        tag = ''
+                                        if '|' in row[2]:
+                                            new_tags = row[2].split('|')
+                                            for new_tag in new_tags:
+                                                if tag == '':
+                                                    tag += 'B-' + re.split('-', new_tag)[1]
+                                                else:
+                                                    tag += '|' + 'B-' + re.split('-', new_tag)[1]
+                                        else:
+                                            tag = 'B-' + re.split('-', row[2])[1]
                                     else:
                                         tag = row[2]
 
