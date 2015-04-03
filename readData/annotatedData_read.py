@@ -57,7 +57,7 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                                     tag = '0'
                                     # data[re.split('-', row[0])[1]] = [token, tag]
                                 else:
-                                    if row[2] == 'O':
+                                    if row[2] == 'O' or row[2] == '0':
                                         tag = '0'
                                     else:
                                         if previous_tag == '0':
@@ -74,7 +74,7 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                                             tag = row[2]
                                 # data[re.split('-', row[0])[1]] = [token, tag]
                             else:
-                                if row[2] == 'O':
+                                if row[2] == 'O' or row[2] == '0':
                                     tag = '0'
                                 else:
                                     if previous_tag == '0':

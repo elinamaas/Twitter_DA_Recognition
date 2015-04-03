@@ -44,14 +44,14 @@ def find_tokens_segmentation(record):
         if tag != '0' and '|' not in tag:
             source_tags[tag].append(i)
             tag = re.split('-', tag)[1]
-            if tag != '_' and tag != 'Wurst' and tag != 'NEIN' and tag != 'Ironie':
-                tags_dictionary[i] = tag
+            # if tag != '_' and tag != 'Wurst' and tag != 'NEIN' and tag != 'Ironie':
+            tags_dictionary[i] = tag
                 # tags_occuracy[tag].append(i)
-                source_tags[tag].append(i)
-            else:
-                tags_dictionary[i] = '0'
-                # tags_occuracy[tag].append(i)
-                source_tags['0'].append(i)
+            source_tags[tag].append(i)
+            # else:
+            #     tags_dictionary[i] = '0'
+            #     # tags_occuracy[tag].append(i)
+            #     source_tags['0'].append(i)
         elif '|' in tag:
             source_da = tag.split('|')
             # j = 0
@@ -119,14 +119,14 @@ def spilt_tags(tags):
     tags_name = tags.split('|')
     tags_list = list()
     for i in range(0, len(tags_name)):
-        if 'O-_' != tags_name[i]: #maybe '0'?
-            tag_name = re.split('-', tags_name[i])[1]
-            if tag_name != 'NEIN' and tag_name != 'Wurst' and tag_name != 'Ironie':
-                tags_list.append(tag_name)
-            else:
-                tags_list.append('0')
-        else:
-            tags_list.append('0')
+        # if 'O-_' != tags_name[i]: #maybe '0'?
+        tag_name = re.split('-', tags_name[i])[1]
+            # if tag_name != 'NEIN' and tag_name != 'Wurst' and tag_name != 'Ironie':
+        tags_list.append(tag_name)
+            # else:
+            #     tags_list.append('0')
+        # else:
+        #     tags_list.append('0')
     return tags_list
 
 
@@ -224,7 +224,7 @@ def build_tag_list_for_offset(da_tags_list):
     return tags_list
 
 
-def check_final_segmentation(list_of_tweets, collection):
+def check_final_segmentation(list_of_tweets):
     for tweet in list_of_tweets:
         source_segmentation = tweet.get_source_segmentation()
         current_segmentation = tweet.get_segmentation()
@@ -235,10 +235,35 @@ def check_final_segmentation(list_of_tweets, collection):
                 else:
                     print 'not good'
         else:
-            print 'tweet_id: ', tweet.get_tweet_id(),  ', current_segmentation: ', current_segmentation, ', source_segmentation: ',  source_segmentation
+            print 'tweet_id: ', tweet.get_tweet_id(),  ', current_segmentation: ', \
+                current_segmentation, ', source_segmentation: ',  source_segmentation
             #what if we have more than one?
 
 
+def numbers_of_tweets_agreed_by_three(list_of_tweets):
+    agreed_with_segmentation = 0
+    argeed_with_tags = list()
+    tweets_to_edit = list()
+    for tweet in list_of_tweets:
+        same_dicision = 0
+        segmentation_dictionary = tweet.get_segmentation()
+        segmentation_values = segmentation_dictionary.values()
+        if 2 not in segmentation_values and 1 not in segmentation_values:
+            agreed_with_segmentation += 1
+            token_dictionary = tweet.get_tags()
+            token_number = len(token_dictionary)
+            for offset, tags in token_dictionary.iteritems():
+                if len(tags) == 1:
+                    for tag_name, agreed in tags.iteritems():
+                        if agreed == 3:
+                            same_dicision += 1
+            if same_dicision == token_number:
+                argeed_with_tags.append(tweet)
+            else:
+                tweets_to_edit.append(tweet)
+        else:
+            tweets_to_edit.append(tweet)
+    return agreed_with_segmentation, argeed_with_tags, tweets_to_edit
 
 
 

@@ -122,6 +122,11 @@ def check_related_tags(taxonomy, tag1, tag2):
 
 
 # tree = build_da_taxonomy()
+# root = tree.root
+# children =  tree.children(root)
+# for child in children:
+#     print child.tag
+# print type(root)
 # print len(tree.all_nodes())
 
 
