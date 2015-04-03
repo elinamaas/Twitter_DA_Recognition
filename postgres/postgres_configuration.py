@@ -13,13 +13,14 @@ def make_connection():
 
         cur = con.cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS Tweet(Tweet_id BIGINT PRIMARY KEY, "
-                    "In_replay_to BIGINT, Text VARCHAR(255))")
-        cur.execute("CREATE TABLE IF NOT EXISTS Annotated_tweets(Tweet_id BIGINT PRIMARY KEY, "
-                    "In_replay_to BIGINT, FOREIGN KEY (Tweet_id) REFERENCES Tweet (Tweet_id))")
+                    "In_replay_to BIGINT, Conversation_id BIGINT, Tweet_text VARCHAR(255), Annotated BOOLEAN)")
+
+        # cur.execute("CREATE TABLE IF NOT EXISTS Annotated_tweets(Tweet_id BIGINT PRIMARY KEY, "
+        #             "FOREIGN KEY(Tweet_id) REFERENCES Tweet (Tweet_id))")
 
         cur.execute('CREATE TABLE IF NOT EXISTS Dialogue_act (Dialogue_act_id INTEGER PRIMARY KEY, '
-                    'Dialogue_act_name VARCHAR(100), Parent_act INTEGER, '
-                    'FOREIGN KEY (Parent_act) REFERENCES Dialogue_act(Dialogue_act_id) )')
+                    'Dialogue_act_name VARCHAR(100), Parent_act_id INTEGER, '
+                    'FOREIGN KEY (Parent_act_id) REFERENCES Dialogue_act(Dialogue_act_id))')
         cur.execute('CREATE TABLE IF NOT EXISTS Token_tweet (Tweet_id BIGINT, '
                     'Token_offset INTEGER, Token VARCHAR(50), Dialogue_act_id INTEGER, '
                     'PRIMARY KEY(Tweet_id, Token_offset), '

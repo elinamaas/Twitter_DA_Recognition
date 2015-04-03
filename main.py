@@ -32,15 +32,15 @@ else:
     print 'Collection ' + collectionAnnotatedData.name + ' is already existed'
 amountOdAnnotatedTweets = mongoDB_configuration.check_tweets_amount(collectionAnnotatedData)
 
-#editing_annotated_tweets(collectionAnnotatedData)
+tweets_id = editing_annotated_tweets(collectionAnnotatedData)
 
-#############Postgres###############
+############# Postgres ###############
 
-rawTwitterData.import_to_postgres(rawTwitterConversation_path)
+# import 10GB tweets move to top, so only once we read the txt
+# rawTwitterData.import_to_postgres(rawTwitterConversation_path)
 
-tweets_tuple = rebuild_conversations.build_conversations_annotated('DATA/annotated_tweets_raw.txt')
-insert_to_table.insert_annotted_conversations(tweets_tuple)
+# Annotated data
+rebuild_conversations.insert_annotated_tweets_postgres(annotatedData_path)
 
 
-rebuild_conversations.insert_tweets(annotatedDataRAW_path)
-rebuild_conversations.build_conversations_annotated(annotatedDataRAW_path)
+# rebuild_conversations.insert_annotated_tweets(tweets_id)

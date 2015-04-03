@@ -15,9 +15,10 @@ def import_raw_twitter_data(directory_path, collection):
 
 
 def import_to_postgres(directory_path):
-    tweets_tuple = ()
-    tweet_list = list()
-    for filename in glob.iglob(os.path.join(directory_path,'*.txt')):
+    for filename in glob.iglob(os.path.join(directory_path, '*.txt')):
+        tweets_tuple = ()
+        tweet_list = list()
+        print 'Inserting to postgres: ' + filename
         content = read_file.readTXT(filename)
         records = read_file.iterparse(content)
         for tweet in records:
@@ -31,7 +32,8 @@ def import_to_postgres(directory_path):
                 help_tuple = (current_tuple,) + tweets_tuple
                 tweets_tuple = help_tuple
             tweet_list.append(tweet_id)
-    insert_to_table.insert_raw_tweets(tweets_tuple)
+        print 'start'
+        insert_to_table.insert_raw_tweets(tweets_tuple)
 
 
 
