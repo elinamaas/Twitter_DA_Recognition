@@ -56,8 +56,8 @@ def crawling(collection, crawled_tweets):
                 continue
 
 
-content = read_file.readTXT('../DATA/annotated_tweets_raw.txt')
-crawled_tweets = check_crawled(content)
-
-collectionAnnotatedData = mongoDB_configuration.get_collection('DARecognition', 'annotatedTwitterData')
-crawling(collectionAnnotatedData, crawled_tweets)
+# content = read_file.readTXT('../DATA/annotated_tweets_raw.txt')
+# crawled_tweets = check_crawled(content)
+#
+# collectionAnnotatedData = mongoDB_configuration.get_collection('DARecognition', 'annotatedTwitterData')
+# crawling(collectionAnnotatedData, crawled_tweets)

@@ -41,7 +41,6 @@ class Conversation:
         return self.conversation_tree
 
 
-
 def build_conversation(collection):
     sys.setrecursionlimit(1500)
     root_tweets = queries.search_root_tweets(collection)
@@ -108,6 +107,6 @@ def check_lang(collection_conversation, collection_raw_data):
 
 
 
-collectionRawData = mongoDB_configuration.get_collection('DARecognition', 'rawTwitterData')
-collectionConversationTree = mongoDB_configuration.get_collection('DARecognition', 'conversationTree')
-check_lang(collectionConversationTree, collectionRawData)
+# collectionRawData = mongoDB_configuration.get_collection('DARecognition', 'rawTwitterData')
+# collectionConversationTree = mongoDB_configuration.get_collection('DARecognition', 'conversationTree')
+# check_lang(collectionConversationTree, collectionRawData)

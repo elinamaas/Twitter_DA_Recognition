@@ -54,7 +54,7 @@ def stats_for_annotated_data():
 
 # print 'Stats for annotated data:'
 # stats_for_annotated_data()
-print 'Stats for raw data: '
-stats_for_raw_data()
+# print 'Stats for raw data: '
+# stats_for_raw_data()
 
 

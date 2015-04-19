@@ -92,7 +92,6 @@ def build_da_taxonomy():
 
     da_taxonomy.create_node('OTHER', 'OTHER', parent='DIT++ Taxonomy')
 
-    da_taxonomy.create_node('Ironie', 'Ironie', parent='DIT++ Taxonomy') #wohin zuordnen?
     da_taxonomy.create_node('0', '0', parent='DIT++ Taxonomy')
 
     #da_taxonomy.show()
