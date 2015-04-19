@@ -2,8 +2,10 @@ __author__ = 'snownettle'
 import glob
 import os
 import csv
+import xlrd
 import re
-
+from annotatedData import annotated_tweet_class, write_to
+from postgres import insert_to_table
 from mongoDB import importData
 
 
@@ -129,3 +131,100 @@ def check_if_consistent(row):
             return False
     else:
         return True
+
+
+def concatenate_done_tweets():
+    #last step- read and write to one file
+    # 1st till id=406517232433233920
+    # 2nd from id=406555888607322112
+    filenames = ('DATA/goldenStandard/done_tweet.csv',
+                 'DATA/goldenStandard/erb-tweet_to_edit.xlsx',
+                 'DATA/goldenStandard/tweet_to_edit_part2.xlsx',
+                 'DATA/goldenStandard/tweet_to_edit-TS.xlsx')
+    tweets_list = list()
+    tweets_id_list = set()
+    tweet_id_list_db = insert_to_table.select_all_tweets()
+    for filename in filenames:
+        if filename == 'DATA/goldenStandard/done_tweet.csv':
+            tweets_list, tweets_id_list = read_done_tweets_file(filename, None, None, tweets_list, tweets_id_list)
+        if filename == 'DATA/goldenStandard/erb-tweet_to_edit.xlsx':
+            tweets_list, tweets_id_list = read_done_tweets_file(filename, None, 3820,
+                                                                tweets_list, tweets_id_list)
+        if filename == 'DATA/goldenStandard/tweet_to_edit-TS.xlsx':
+            tweets_list, tweets_id_list = read_done_tweets_file(filename, 6161, None,
+                                                                tweets_list, tweets_id_list)
+        if filename == 'DATA/goldenStandard/tweet_to_edit_part2.xlsx':
+            tweets_list, tweets_id_list = read_done_tweets_file(filename, 3820, 6161,
+                                                                tweets_list, tweets_id_list)
+    difference_list = set()
+    for tweet_id in tweet_id_list_db:
+        if tweet_id not in tweets_id_list:
+            difference_list.add(tweet_id)
+    print 'There are ', len(difference_list), ' tweets to be reviewed.'
+    write_to.write_to_xlsx_file_final(tweets_list, 'DATA/goldenStandard/final_tweets_done.xlsx')
+    insert_to_table.insert_annotated_tweets(tweets_list)
+    return tweets_list, difference_list
+
+
+def read_done_tweets_file(filename, start, stop, tweets_list, tweets_id_list):
+    tweet = None
+    # tweets_list = list()
+    read_data = True
+    workbook = xlrd.open_workbook(filename)
+    worksheet = workbook.sheet_by_name('Sheet1')
+    # print worksheet.row(5)
+    if stop is None:
+        num_rows = worksheet.nrows - 1
+    else:
+        num_rows = stop
+    # num_cells = worksheet.ncols - 1
+    if start is None:
+        curr_row = 0
+    else:
+        curr_row = start - 1
+
+    while curr_row < num_rows:
+        curr_row += 1
+        # row = worksheet.row(curr_row)
+
+        if worksheet.cell_value(curr_row, 0) != '':
+            if type(worksheet.cell_value(curr_row, 0)) is float:
+                cell_value = str(int(worksheet.cell_value(curr_row, 0)))
+            else:
+                cell_value = worksheet.cell_value(curr_row, 0)
+            if '#text=' in cell_value and 'id=' in cell_value:
+
+                if tweet is not None:
+                    tweet.set_segments()
+                    if tweet.get_tweet_id() not in tweets_id_list:
+                        tweets_list.append(tweet)
+                        tweets_id_list.add(tweet.get_tweet_id())
+
+                tweet_id = re.split('id=', cell_value)[1]
+                tweet_id = re.split(' user', tweet_id)[0]
+                tweet_id = str(tweet_id)
+                text = cell_value
+                tweet = annotated_tweet_class.AnnotatedTweet(tweet_id, text)
+                # if start is not None and tweet_id == start:
+                #     read_data = True
+                # if stop is not None and tweet_id == stop:
+                #     # read_data = False
+                #     # tweet = None
+                #     break
+                # if read_data is True:
+
+            else:
+                if tweet is not None:
+                    offset = str(int(worksheet.cell_value(curr_row, 0)))
+                    token = worksheet.cell_value(curr_row, 1)  # maybe in str????????
+                    da = str(worksheet.cell_value(curr_row, 6))
+                    tweet.set_token(offset, token, da)
+        if curr_row == num_rows:
+            if tweet is not None:
+                tweet.set_segments()
+                if tweet.get_tweet_id() not in tweets_id_list:
+                    tweets_list.append(tweet)
+                    tweets_id_list.add(tweet.get_tweet_id())
+
+    return tweets_list, tweets_id_list
+
