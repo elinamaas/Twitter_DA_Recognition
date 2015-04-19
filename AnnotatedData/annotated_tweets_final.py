@@ -5,6 +5,7 @@ from annotatedData.editing_annotated_tweets import segmentation, merge_annotatio
 from statistics import annotatedData_stat
 from annotation.dialogue_acts_tree import build_da_taxonomy
 from annotatedData.write_to import write_to_xlsx_file
+import os.path
 
 
 def editing_annotated_tweets(collectionAnnotatedData):
@@ -39,12 +40,13 @@ def editing_annotated_tweets(collectionAnnotatedData):
     #check segmentation
     # check_final_segmentation(list_of_tweets_done)
 
-    write_to_xlsx_file(tweets_to_edit, 'tweet_to_edit.csv')
-    write_to_xlsx_file(agreed, 'done_tweet.csv')
+    if os.path.isfile('DATA/goldenStandard/tweet_to_edit.csv') is False:
+        write_to_xlsx_file(tweets_to_edit, 'DATA/goldenStandard/tweet_to_edit.csv')
+        write_to_xlsx_file(agreed, 'DATA/goldenStandard/done_tweet.csv')
 
-    tweets_id = set()
-    for tweet in list_of_annotated_tweets:
-        tweets_id.add(int(tweet.get_tweet_id()))
-    return tweets_id
+    # tweets_id = set()
+    # for tweet in list_of_annotated_tweets:
+    #     tweets_id.add(int(tweet.get_tweet_id()))
+    # return tweets_id
 
 

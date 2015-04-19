@@ -2,7 +2,7 @@ __author__ = 'snownettle'
 import collections
 
 
-class AnnotatedTweet:
+class AnnotatedTweetEdit:
     def __init__(self, tweet_id, text_id, text):
         self.tweet_id = tweet_id
         self.text_id = text_id
@@ -164,4 +164,65 @@ class AnnotatedTweet:
                 return tweet
             else:
                 continue
-        return AnnotatedTweet(tweet_id, text_id, text)
+        return AnnotatedTweetEdit(tweet_id, text_id, text)
+
+
+class AnnotatedTweet:
+    def __init__(self, tweet_id, tweet_text):
+        self.tweet_id = tweet_id
+        self.tweet_text = tweet_text
+        self.segments = dict() # offset: DA
+        self.tokens = dict() #offset:{token:da}
+
+    def get_tweet_id(self):
+        return self.tweet_id
+
+    def get_text(self):
+        return self.tweet_text
+
+    def get_segments(self):
+        return self.segments
+
+    def get_tokens(self):
+        return self.tokens
+
+    def set_segments(self):
+        previous_tag = ''
+        start_offset = '4'
+        end_offset = ''
+        token_da_dict = self.tokens
+        for i in range(4, len(self.tokens) + 4, 1):
+            token_da = token_da_dict[str(i)]
+            for token, da in token_da.iteritems():
+                if i == len(self.tokens) + 4 - 1:
+
+                    if i == 4:
+                        segmentation_offset = start_offset + ':' + str(i)
+                        self.segments[segmentation_offset] = da
+                    else:
+                        if previous_tag != da:
+                            segmentation_offset = start_offset + ':' + str(i-1)
+                            self.segments[segmentation_offset] = previous_tag
+                            segmentation_offset = str(i) + ':' + str(i)
+                            self.segments[segmentation_offset] = da
+                        else:
+                            segmentation_offset = start_offset + ':' + str(i)
+                            self.segments[segmentation_offset] = da
+
+                else:
+                    if previous_tag == '':
+                        start_offset = str(i)
+                        previous_tag = da
+                    elif previous_tag != da:
+                        end_offset = str(i-1)
+                        segmentation_offset = start_offset + ':' + end_offset
+                        self.segments[segmentation_offset] = previous_tag
+                        previous_tag = da
+                        start_offset = str(i)
+
+    def set_token(self, offset, token, da):
+        token_da = dict()
+        token_da[token] = da
+        self.tokens[offset] = token_da
+
+

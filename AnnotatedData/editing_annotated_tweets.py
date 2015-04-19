@@ -1,6 +1,6 @@
 __author__ = 'snownettle'
 from mongoDB import queries
-from annotatedData.annotated_tweet_class import AnnotatedTweet
+from annotatedData.annotated_tweet_class import AnnotatedTweetEdit
 import re
 from collections import defaultdict
 import itertools
@@ -10,19 +10,57 @@ from annotation.dialogue_acts_tree import find_common_parent, check_related_tags
 def segmentation(collection):
     records = queries.find_all(collection)
     list_of_tweets_with_tags = []
+    unigrams_dict = dict()
     for record in records:
         tweet_id = record['tweet_id']
         text_id = record['text_id']
         text = record['text']
-        tweet = AnnotatedTweet.check_if_tweet_exists(list_of_tweets_with_tags, tweet_id, text_id, text)
+        tweet = AnnotatedTweetEdit.check_if_tweet_exists(list_of_tweets_with_tags, tweet_id, text_id, text)
         tokens, word_dictionary, source_tags = find_tokens_segmentation(record)
         tweet = tweet.set_word(word_dictionary)
+        previous_tag = ''
+        # for token in tokens:
+        for offset, name in tokens.iteritems():
+            if previous_tag is list:
+                if type(name) is list:
+                        for n in name:
+                            if n not in previous_tag:
+                                if n in unigrams_dict:
+                                    unigrams_dict[n] += 1
+                                else:
+                                    unigrams_dict[n] = 1
+
+                else:
+                    if name not in previous_tag:
+                        if name in unigrams_dict:
+                            unigrams_dict[name] += 1
+                        else:
+                            unigrams_dict[name] = 1
+
+            else:
+                if previous_tag != name:
+                    if type(name) is list:
+                        for n in name:
+                            if n in unigrams_dict:
+                                unigrams_dict[n] += 1
+                            else:
+                                unigrams_dict[n] = 1
+                    else:
+                        if name in unigrams_dict:
+                            unigrams_dict[name] += 1
+                        else:
+                            unigrams_dict[name] = 1
+            previous_tag = name
+
         tweet = tweet.add_tag(tokens)
         # tweet = tweet.add_segmentation(segments)
         tweet.add_source_segments(source_tags) #set segmentation for raw annotated tweets
         # tweet.set_source_segmentation()
         if tweet not in list_of_tweets_with_tags:
             list_of_tweets_with_tags.append(tweet)
+    print 'UNIGRAMS FOR RAW ANNOTATION'
+    for tag_name, occurancy in unigrams_dict.iteritems():
+        print tag_name + '\t ' + str(occurancy)
     return list_of_tweets_with_tags
 
 
