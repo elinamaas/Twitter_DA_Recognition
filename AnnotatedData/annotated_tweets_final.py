@@ -6,12 +6,14 @@ from statistics import annotatedData_stat
 from annotation.dialogue_acts_tree import build_da_taxonomy
 from annotatedData.write_to import write_to_xlsx_file
 import os.path
+from annotatedData import inter_annotater_agreement
 
 
 def editing_annotated_tweets(collectionAnnotatedData):
 
     list_of_annotated_tweets = segmentation(collectionAnnotatedData)
     agreed_with_segmentation, agreed, tweets_to_edit = numbers_of_tweets_agreed_by_three(list_of_annotated_tweets)
+    inter_annotater_agreement.chance_corrected_coefficient(agreed_with_segmentation)
     annotatedData_stat.number_of_annotated_tweet(list_of_annotated_tweets)
     annotatedData_stat.numbers_of_tweets_agreed_by_three(agreed_with_segmentation, agreed)
 
