@@ -23,34 +23,34 @@ def stats_for_raw_data():
     rawData_stat.longest_conversation(conversation_list)
 
 
-def stats_for_annotated_data():
-    collectionAnnotatedData = mongoDB_configuration.get_collection('DARecognition', 'annotatedTwitterData')
-    list_of_annotated_tweets = segmentation(collectionAnnotatedData)
-    annotatedData_stat.number_of_annotated_tweet(list_of_annotated_tweets)
-    annotatedData_stat.numbers_of_tweets_agreed_by_three(list_of_annotated_tweets)
-
-    print 'First merge of tags after reading the data' #choosing where is the number bigger
-    #first merge of tags, after building the list
-    list_of_annotated_tweets = merge_annotations(list_of_annotated_tweets)
-    rewrite_segmentation(list_of_annotated_tweets)
-    list_of_tweets_done, list_of_tweets_for_editing = annotatedData_stat.numbers_of_agreed_tweets_after_merging(list_of_annotated_tweets)
-
-    print 'First merge of tag children'
-    #first merge of children
-    da_taxonomy = build_da_taxonomy()
-    merge_da_children(list_of_annotated_tweets, da_taxonomy)
-    rewrite_segmentation(list_of_annotated_tweets)
-    list_of_tweets_done, list_of_tweets_for_editing = annotatedData_stat.numbers_of_agreed_tweets_after_merging(list_of_annotated_tweets)
-
-    print 'Second merge of tags'
-    #second merge of tags
-    list_of_annotated_tweets = merge_annotations(list_of_annotated_tweets)
-    rewrite_segmentation(list_of_annotated_tweets)
-    list_of_tweets_done, list_of_tweets_for_editing = annotatedData_stat.numbers_of_agreed_tweets_after_merging(list_of_annotated_tweets)
-
-    annotatedData_stat.segments_in_tweet(list_of_tweets_done)
-    write_to_xlsx_file(list_of_tweets_for_editing, '../DATA/tweet_to_edit.xlsx')
-    write_to_xlsx_file(list_of_tweets_done, '../DATA/done_tweet.xlsx')
+# def stats_for_annotated_data():
+#     collectionAnnotatedData = mongoDB_configuration.get_collection('DARecognition', 'annotatedTwitterData')
+#     list_of_annotated_tweets = segmentation(collectionAnnotatedData)
+#     annotatedData_stat.number_of_annotated_tweet(list_of_annotated_tweets)
+#     annotatedData_stat.numbers_of_tweets_agreed_by_three(list_of_annotated_tweets)
+#
+#     print 'First merge of tags after reading the data' #choosing where is the number bigger
+#     #first merge of tags, after building the list
+#     list_of_annotated_tweets = merge_annotations(list_of_annotated_tweets)
+#     rewrite_segmentation(list_of_annotated_tweets)
+#     list_of_tweets_done, list_of_tweets_for_editing = annotatedData_stat.numbers_of_agreed_tweets_after_merging(list_of_annotated_tweets)
+#
+#     print 'First merge of tag children'
+#     #first merge of children
+#     da_taxonomy = build_da_taxonomy()
+#     merge_da_children(list_of_annotated_tweets, da_taxonomy)
+#     rewrite_segmentation(list_of_annotated_tweets)
+#     list_of_tweets_done, list_of_tweets_for_editing = annotatedData_stat.numbers_of_agreed_tweets_after_merging(list_of_annotated_tweets)
+#
+#     print 'Second merge of tags'
+#     #second merge of tags
+#     list_of_annotated_tweets = merge_annotations(list_of_annotated_tweets)
+#     rewrite_segmentation(list_of_annotated_tweets)
+#     list_of_tweets_done, list_of_tweets_for_editing = annotatedData_stat.numbers_of_agreed_tweets_after_merging(list_of_annotated_tweets)
+#
+#     annotatedData_stat.segments_in_tweet(list_of_tweets_done)
+#     write_to_xlsx_file(list_of_tweets_for_editing, '../DATA/tweet_to_edit.xlsx')
+#     write_to_xlsx_file(list_of_tweets_done, '../DATA/done_tweet.xlsx')
 
 # print 'Stats for annotated data:'
 # stats_for_annotated_data()
