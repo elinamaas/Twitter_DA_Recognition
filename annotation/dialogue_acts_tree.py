@@ -94,7 +94,7 @@ def build_da_taxonomy():
 
     da_taxonomy.create_node('0', '0', parent='DIT++ Taxonomy')
 
-    #da_taxonomy.show()
+    # da_taxonomy.show()
     #print da_taxonomy.depth()
     # print da_taxonomy.is_branch('DIT++ Taxonomy')
     return da_taxonomy
@@ -121,6 +121,9 @@ def check_related_tags(taxonomy, tag1, tag2):
 
 
 # tree = build_da_taxonomy()
+# a = tree.all_nodes()
+# for node in a:
+#     print node.tag
 # root = tree.root
 # children =  tree.children(root)
 # for child in children:

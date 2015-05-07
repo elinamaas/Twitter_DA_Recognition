@@ -279,7 +279,7 @@ def check_final_segmentation(list_of_tweets):
 
 
 def numbers_of_tweets_agreed_by_three(list_of_tweets):
-    agreed_with_segmentation = 0
+    agreed_with_segmentation = set()
     argeed_with_tags = list()
     tweets_to_edit = list()
     for tweet in list_of_tweets:
@@ -287,7 +287,7 @@ def numbers_of_tweets_agreed_by_three(list_of_tweets):
         segmentation_dictionary = tweet.get_segmentation()
         segmentation_values = segmentation_dictionary.values()
         if 2 not in segmentation_values and 1 not in segmentation_values:
-            agreed_with_segmentation += 1
+            agreed_with_segmentation.add(tweet)
             token_dictionary = tweet.get_tags()
             token_number = len(token_dictionary)
             for offset, tags in token_dictionary.iteritems():
