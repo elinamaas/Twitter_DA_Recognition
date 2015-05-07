@@ -7,13 +7,20 @@ from annotation.dialogue_acts_tree import build_da_taxonomy
 from annotatedData.write_to import write_to_xlsx_file
 import os.path
 from annotatedData import inter_annotater_agreement
+from statistics import annotatedData_stat, test
 
 
 def editing_annotated_tweets(collectionAnnotatedData):
 
     list_of_annotated_tweets = segmentation(collectionAnnotatedData)
+    new_tweets_lang = test.conversation_regarding_language()
+    list_of_annotated_tweets = test.make_new_list(list_of_annotated_tweets, new_tweets_lang)
     agreed_with_segmentation, agreed, tweets_to_edit = numbers_of_tweets_agreed_by_three(list_of_annotated_tweets)
-    inter_annotater_agreement.chance_corrected_coefficient(agreed_with_segmentation)
+    tweet_id_three_annotator = annotatedData_stat.students_tweets()
+
+    inter_annotater_agreement.chance_corrected_coefficient_labels(list_of_annotated_tweets, tweet_id_three_annotator)
+    inter_annotater_agreement.chance_corrected_coefficient_categories(agreed_with_segmentation)
+
     annotatedData_stat.number_of_annotated_tweet(list_of_annotated_tweets)
     annotatedData_stat.numbers_of_tweets_agreed_by_three(agreed_with_segmentation, agreed)
 

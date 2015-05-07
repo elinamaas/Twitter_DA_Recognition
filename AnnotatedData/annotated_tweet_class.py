@@ -167,7 +167,7 @@ class AnnotatedTweetEdit:
         return AnnotatedTweetEdit(tweet_id, text_id, text)
 
 
-class AnnotatedTweet:
+class AnnotatedTweet: #for final version, after every merging
     def __init__(self, tweet_id, tweet_text):
         self.tweet_id = tweet_id
         self.tweet_text = tweet_text
