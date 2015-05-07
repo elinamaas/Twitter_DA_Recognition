@@ -38,7 +38,6 @@ def find_conversations_root():
     return results
 
 
-
 def find_not_german_tweets():
     connection, cursor = postgres_configuration.make_connection()
     query = 'select tweet_id, tweet_text from tweet where german = False'
@@ -48,6 +47,18 @@ def find_not_german_tweets():
     print 'There are ' + str(len(results)) + ' not german tweets'
     for result in results:
         print result
+    return results
+
+
+def find_das_for_tweet(tweet_id):
+    connection, cursor = postgres_configuration.make_connection()
+    query = 'select da.dialogue_act_name from segmentation as s, dialogue_act as da ' \
+            'where s.tweet_id =' + str(tweet_id) + 'and s.dialogue_act_id = da.dialogue_act_id ' \
+                                                   'group by s.dialogue_act_id, da.dialogue_act_name'
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+    postgres_configuration.close_connection(connection)
     return results
 
 
