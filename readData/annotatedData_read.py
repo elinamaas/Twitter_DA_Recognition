@@ -7,6 +7,7 @@ import re
 from annotatedData import annotated_tweet_class, write_to
 from postgres import insert_to_table
 from mongoDB import importData
+from statistics import annotatedData_stat
 
 
 def read_annotated_docs(directory_path, collection_annotated_data):
@@ -161,6 +162,7 @@ def concatenate_done_tweets():
         if tweet_id not in tweets_id_list:
             difference_list.add(tweet_id)
     print 'There are ', len(difference_list), ' tweets to be reviewed.'
+    annotatedData_stat.segments_in_tweet(tweets_list)
     write_to.write_to_xlsx_file_final(tweets_list, 'DATA/goldenStandard/final_tweets_done.xlsx')
     insert_to_table.insert_annotated_tweets(tweets_list)
     return tweets_list, difference_list
