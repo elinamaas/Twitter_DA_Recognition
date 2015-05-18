@@ -2,7 +2,7 @@ __author__ = 'snownettle'
 from readData import rawTwitterData, annotatedData_read
 from mongoDB import mongoDB_configuration, importTwitterConversation, queries
 from annotatedData.annotated_tweets_final import editing_annotated_tweets
-from annotatedData import rebuild_conversations
+from annotatedData import insert_to_postgres
 from postgres import insert_to_table, postgres_queries
 
 
@@ -43,7 +43,7 @@ editing_annotated_tweets(collectionAnnotatedData)
 # DA Taxonomy
 insert_to_table.insert_dialogue_act_names()
 # Insert annotated tweets: tweet id, text, replays, lang
-rebuild_conversations.insert_annotated_tweets_postgres(annotatedData_path)
+insert_to_postgres.insert_annotated_tweets_postgres(annotatedData_path)
 
 annotatedData_read.concatenate_done_tweets()
 # rebuild_conversations.insert_annotated_tweets(tweets_id)
