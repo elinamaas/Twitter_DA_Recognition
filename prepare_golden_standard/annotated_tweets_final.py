@@ -1,19 +1,22 @@
 __author__ = 'snownettle'
-import os.path
 
+import os.path
 from prepare_golden_standard.editing_annotated_tweets import segmentation, merge_annotations, \
     rewrite_segmentation, merge_da_children, numbers_of_tweets_agreed_by_three
 from da_recognition.dialogue_acts_taxonomy import build_da_taxonomy
 from prepare_golden_standard.write_to import write_to_xlsx_file
 from prepare_golden_standard import inter_annotater_agreement
-from statistics import annotatedData_stat, test
+from statistics import annotatedData_stat
+from prepare_golden_standard.rebuild_conversations import delete_non_german_tweets_from_conversation, \
+    conversation_regarding_language
 
 
 def editing_annotated_tweets(collectionAnnotatedData):
 
     list_of_annotated_tweets = segmentation(collectionAnnotatedData)
-    new_tweets_lang = test.conversation_regarding_language()
-    list_of_annotated_tweets = test.make_new_list(list_of_annotated_tweets, new_tweets_lang)
+    new_tweets_lang = conversation_regarding_language()
+    #delete not german tweets
+    list_of_annotated_tweets = delete_non_german_tweets_from_conversation(list_of_annotated_tweets, new_tweets_lang)
     agreed_with_segmentation, agreed, tweets_to_edit = numbers_of_tweets_agreed_by_three(list_of_annotated_tweets)
     tweet_id_three_annotator = annotatedData_stat.students_tweets()
 

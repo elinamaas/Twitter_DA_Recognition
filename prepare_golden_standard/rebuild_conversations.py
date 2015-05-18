@@ -24,8 +24,8 @@ def build_conversation_lang(parent_tweet, converastion_raw, conversation_tree):
             build_conversation(tweet[0], converastion_raw, conversation_tree)
         i += 1
 
-
-def conversation_regarding_language(): # with width and depth
+#rebuilf conversation, take in account german tweets,with width and depth
+def conversation_regarding_language():
     conversation_amount = postgres_queries.find_annotated_conversation_number()
     conversation_list = list()
     depth_dict = dict()
@@ -73,3 +73,12 @@ def conversation_regarding_language(): # with width and depth
         number += len(con.all_nodes())
 
     return new_tweet_list_id, conversation_list
+
+
+def delete_non_german_tweets_from_conversation(old_tweets, tweet_german):
+    new_list_tweet_only_german = list()
+    for tweet in old_tweets:
+        tweet_id = long(tweet.get_tweet_id())
+        if tweet_id in tweet_german:
+            new_list_tweet_only_german.append(tweet)
+    return new_list_tweet_only_german

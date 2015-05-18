@@ -10,6 +10,7 @@ from mongoDB import importData
 from statistics import annotatedData_stat
 
 
+#read original annotated data, import to mongoDB
 def read_annotated_docs(directory_path, collection_annotated_data):
     conversation_id = 0
     data = {}
@@ -52,70 +53,71 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                                 and re.split('-', row[0])[1] not in ['1', '2', '3'] and len(row) > 3:
                             token = row[1]
                             if '@' in token:
-                                # test = row[0].split('-')[1]
                                 if row[0].split('-')[1] == '4':
                                     tag = '0'
-                                    # data[re.split('-', row[0])[1]] = [token, tag]
                                 elif '@' in previous_row[1] and previous_tag == '0':
                                     tag = '0'
-                                    # data[re.split('-', row[0])[1]] = [token, tag]
                                 else:
-                                    if row[2] == 'O' or row[2] == '0':
-                                        tag = '0'
-                                    else:
-                                        if previous_tag == '0':
-                                            if '|' in row[2]:
-                                                new_tags = re.split('|', row[2])
-                                                for new_tag in new_tags:
-                                                    if tag == '':
-                                                        tag += 'B-' + re.split('-', new_tag)[1]
-                                                    else:
-                                                        tag += '|' + 'B-' + re.split('-', new_tag)[1]
-                                            else:
-                                                tag = 'B-' + re.split('-', row[2])[1]
-                                        else:
-                                            tag = row[2]
-                                # data[re.split('-', row[0])[1]] = [token, tag]
+                                    tag = splitting_tag(row, previous_tag)
+                                    # if row[2] == 'O' or row[2] == '0':
+                                    #     tag = '0'
+                                    # else:
+                                    #     if previous_tag == '0':
+                                    #         tag = ''
+                                    #         if '|' in row[2]:
+                                    #             new_tags = re.split('|', row[2])
+                                    #             for new_tag in new_tags:
+                                    #                 if tag == '':
+                                    #                     tag += 'B-' + re.split('-', new_tag)[1]
+                                    #                 else:
+                                    #                     tag += '|' + 'B-' + re.split('-', new_tag)[1]
+                                    #         else:
+                                    #             tag = 'B-' + re.split('-', row[2])[1]
+                                    #     else:
+                                    #         tag = row[2]
                             else:
-                                if row[2] == 'O' or row[2] == '0':
-                                    tag = '0'
-                                else:
-                                    if previous_tag == '0':
-                                        tag = ''
-                                        if '|' in row[2]:
-                                            new_tags = row[2].split('|')
-                                            for new_tag in new_tags:
-                                                if tag == '':
-                                                    tag += 'B-' + re.split('-', new_tag)[1]
-                                                else:
-                                                    tag += '|' + 'B-' + re.split('-', new_tag)[1]
-                                        else:
-                                            tag = 'B-' + re.split('-', row[2])[1]
-                                    else:
-                                        tag = row[2]
-
+                                tag = splitting_tag(row, previous_tag)
+                                # if row[2] == 'O' or row[2] == '0':
+                                #     tag = '0'
+                                # else:
+                                #     if previous_tag == '0':
+                                #         tag = ''
+                                #         if '|' in row[2]:
+                                #             new_tags = row[2].split('|')
+                                #             for new_tag in new_tags:
+                                #                 if tag == '':
+                                #                     tag += 'B-' + re.split('-', new_tag)[1]
+                                #                 else:
+                                #                     tag += '|' + 'B-' + re.split('-', new_tag)[1]
+                                #         else:
+                                #             tag = 'B-' + re.split('-', row[2])[1]
+                                #     else:
+                                #         tag = row[2]
                             data[re.split('-', row[0])[1]] = [token, tag]
                             previous_tag = tag
-
                         elif len(row) < 3:
                             conversation_id = 1
-
                     previous_row = row
 
-                #print content
 
-
-def find_in_replay_to_the_status(collection, tweet_id):
-    print tweet_id
-    tweet = collection.find({'id':tweet_id})
-    #print tweet.count()
-    return tweet[0]['in_reply_to_status_id']
-
-
-def find_annotated_tweet_id(row):
-    if '#id' in row[0]:
-        return re.split('id=', row[0])[1]
-
+def splitting_tag(row, previous_tag):
+    if row[2] == 'O' or row[2] == '0':
+        tag = '0'
+    else:
+        if previous_tag == '0':
+            tag = ''
+            if '|' in row[2]:
+                new_tags = row[2].split('|')
+                for new_tag in new_tags:
+                    if tag == '':
+                        tag += 'B-' + re.split('-', new_tag)[1]
+                    else:
+                        tag += '|' + 'B-' + re.split('-', new_tag)[1]
+            else:
+                tag = 'B-' + re.split('-', row[2])[1]
+        else:
+            tag = row[2]
+    return tag
 
 def check_if_new_thread(row):
     if 'webanno.custom.DialogActs' in row[0] or '#text=New Thread size=' in row[0]:
@@ -133,7 +135,8 @@ def check_if_consistent(row):
     else:
         return True
 
-
+# second round of annotation, annotated missing twwets from merging.
+#insert to postgres
 def concatenate_done_tweets():
     #last step- read and write to one file
     # 1st till id=406517232433233920
@@ -162,33 +165,27 @@ def concatenate_done_tweets():
         if tweet_id not in tweets_id_list:
             difference_list.add(tweet_id)
     print 'There are ', len(difference_list), ' tweets to be reviewed.'
-    annotatedData_stat.segments_in_tweet(tweets_list)
-    write_to.write_to_xlsx_file_final(tweets_list, 'DATA/goldenStandard/final_tweets_done.xlsx')
+    # annotatedData_stat.segments_in_tweet(tweets_list)
+    # write_to.write_to_xlsx_file_final(tweets_list, 'DATA/goldenStandard/final_tweets_done.xlsx')
     insert_to_table.insert_annotated_tweets(tweets_list)
     return tweets_list, difference_list
 
 
 def read_done_tweets_file(filename, start, stop, tweets_list, tweets_id_list):
     tweet = None
-    # tweets_list = list()
-    read_data = True
+    # read_data = True
     workbook = xlrd.open_workbook(filename)
     worksheet = workbook.sheet_by_name('Sheet1')
-    # print worksheet.row(5)
     if stop is None:
         num_rows = worksheet.nrows - 1
     else:
         num_rows = stop
-    # num_cells = worksheet.ncols - 1
     if start is None:
         curr_row = 0
     else:
         curr_row = start - 1
-
     while curr_row < num_rows:
         curr_row += 1
-        # row = worksheet.row(curr_row)
-
         if worksheet.cell_value(curr_row, 0) != '':
             if type(worksheet.cell_value(curr_row, 0)) is float:
                 cell_value = str(int(worksheet.cell_value(curr_row, 0)))
@@ -207,18 +204,10 @@ def read_done_tweets_file(filename, start, stop, tweets_list, tweets_id_list):
                 tweet_id = str(tweet_id)
                 text = cell_value
                 tweet = annotated_tweet_class.AnnotatedTweet(tweet_id, text)
-                # if start is not None and tweet_id == start:
-                #     read_data = True
-                # if stop is not None and tweet_id == stop:
-                #     # read_data = False
-                #     # tweet = None
-                #     break
-                # if read_data is True:
-
             else:
                 if tweet is not None:
                     offset = str(int(worksheet.cell_value(curr_row, 0)))
-                    token = worksheet.cell_value(curr_row, 1)  # maybe in str????????
+                    token = worksheet.cell_value(curr_row, 1)
                     da = str(worksheet.cell_value(curr_row, 6))
                     tweet.set_token(offset, token, da)
         if curr_row == num_rows:

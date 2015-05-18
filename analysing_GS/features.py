@@ -155,7 +155,7 @@ def calculate_unigrams():
             unigrams[unigram[1]] += unigram[0]
         else:
             unigrams[unigram[1]] = unigram[0]
-    unigrams['<S>'] = 172
+    unigrams['<S>'] = 172 # the number of conversation in golgen statdard
     return unigrams
 
 
@@ -170,10 +170,10 @@ def bigram_probability(bigrams, unigrams):
     return bigram_prob
 
 
-print 'Bigrams'
-bigrams = calculate_da_bigrams()
-unigrams = calculate_unigrams()
-bigram_probability(bigrams, unigrams)
+# print 'Bigrams'
+# bigrams = calculate_da_bigrams()
+# unigrams = calculate_unigrams()
+# bigram_probability(bigrams, unigrams)
 # print 'Unigrams short and long'
 # calculate_da_unigrams_short_long()
 # print 'Bigrmas short and long'
