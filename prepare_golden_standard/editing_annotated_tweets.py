@@ -1,10 +1,11 @@
 __author__ = 'snownettle'
-from mongoDB import queries
-from annotatedData.annotated_tweet_class import AnnotatedTweetEdit
 import re
 from collections import defaultdict
 import itertools
-from annotation.dialogue_acts_tree import find_common_parent, check_related_tags
+
+from mongoDB import queries
+from prepare_golden_standard.annotated_tweet_class import AnnotatedTweetEdit
+from da_recognition.dialogue_acts_taxonomy import find_common_parent, check_related_tags
 
 
 def segmentation(collection):

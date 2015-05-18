@@ -1,7 +1,7 @@
 __author__ = 'snownettle'
 
 import postgres_configuration
-from annotation import dialogue_acts_tree
+from da_recognition import dialogue_acts_taxonomy
 
 
 def insert_raw_tweets(tweets):
@@ -15,7 +15,7 @@ def insert_raw_tweets(tweets):
 
 def insert_dialogue_act_names():
     if select_da():
-        dialogue_act_names_tree = dialogue_acts_tree.build_da_taxonomy()
+        dialogue_act_names_tree = dialogue_acts_taxonomy.build_da_taxonomy()
         root = dialogue_act_names_tree.root
         da_list = list()
         da_tuple = (1, root, None)

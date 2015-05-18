@@ -2,12 +2,15 @@ __author__ = 'snownettle'
 # calculate ICA for those tweets where we have the same segmentation, segments wise!
 from math import factorial as fac
 from math import pow
-import xlsxwriter
 import collections
-from annotation import dialogue_acts_tree
 import itertools
-import numpy as np
 from collections import defaultdict
+
+import xlsxwriter
+import numpy as np
+
+from da_recognition import dialogue_acts_taxonomy
+
 
 def chance_corrected_coefficient_categories(list_of_tweets): #overall_observed_agreement
     sum_arg_category = 0
@@ -70,7 +73,7 @@ def confusion_matrix(segmentation_agreement):
     segments_list = []
     da_list = []
     segments_list.extend(range(1, len(segmentation_agreement) + 1, 1))
-    da_tree = dialogue_acts_tree.build_da_taxonomy()
+    da_tree = dialogue_acts_taxonomy.build_da_taxonomy()
     nodes = da_tree.all_nodes()
     matrix_tuple = list()
     for node in nodes:

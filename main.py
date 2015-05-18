@@ -1,8 +1,8 @@
 __author__ = 'snownettle'
 from readData import rawTwitterData, annotatedData_read
 from mongoDB import mongoDB_configuration, importTwitterConversation, queries
-from annotatedData.annotated_tweets_final import editing_annotated_tweets
-from annotatedData import insert_to_postgres
+from prepare_golden_standard.annotated_tweets_final import editing_annotated_tweets
+from prepare_golden_standard import insert_to_postgres
 from postgres import insert_to_table, postgres_queries
 
 

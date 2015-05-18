@@ -4,7 +4,7 @@ import os
 import csv
 import xlrd
 import re
-from annotatedData import annotated_tweet_class, write_to
+from prepare_golden_standard import annotated_tweet_class, write_to
 from postgres import insert_to_table
 from mongoDB import importData
 from statistics import annotatedData_stat
