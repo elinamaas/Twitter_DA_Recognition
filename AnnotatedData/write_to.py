@@ -1,6 +1,9 @@
 __author__ = 'snownettle'
 import xlsxwriter
 import re
+import rebuild_conversations
+from postgres import postgres_queries
+from mongoDB import queries, mongoDB_configuration
 
 
 def write_to_xlsx_file(list_of_tweets, file_name):
@@ -68,3 +71,94 @@ def write_to_xlsx_file_final(list_of_tweets, file_name):
                 row += 1
         row += 1
     workbook.close()
+
+
+def write_to_xls_pure_annotation(list_of_tweet_tuple, file_name):
+    workbook = xlsxwriter.Workbook(file_name)
+    worksheet = workbook.add_worksheet()
+    row = 1
+    col = 0
+    worksheet.write(0, 0, 'offset')
+    worksheet.write(0, 1, 'token')
+    worksheet.write(0, 2, 'dialogue act')
+    conversation_id = 0
+    for tweet in list_of_tweet_tuple:
+        text_id = tweet[0]
+        if text_id == 0:
+            conversation_id += 1
+            line = 'conversation_id=' + str(conversation_id)
+            worksheet.write(row, col, line)
+            row += 1
+        tweet_id = tweet[1]
+        tweet_text = tweet[2]
+        in_replay_to = tweet[4]
+        da_segments = tweet[3]
+        original_annotation = tweet[5]
+        line = '#text=' + str(text_id) + ' #tweet_id=' + str(tweet_id) + ' #in_replay_to=' + str(in_replay_to) \
+               + ' #tweet_text=' + tweet_text
+        line = unicode(line, 'utf-8')
+        worksheet.write(row, col, line)
+        row += 1
+        tokens = str(tweet_text).split(' ')
+        for i in range(4, len(tokens) + 4, 1):
+            # annotations = original_annotation.copy()
+            token_da = tokens[i-4]
+            token_da = unicode(token_da, 'utf-8')
+            worksheet.write(row, col, str(i))
+            worksheet.write(row, col+1, token_da)
+            da = find_da_for_token(da_segments, i)
+            worksheet.write(row, col+2, da)
+            for annotation in original_annotation:
+                original_da = annotation[str(i)][1]
+                worksheet.write(row, col+3, original_da)
+                col += 1
+            col = 0
+            row += 1
+        row += 1
+    workbook.close()
+
+
+def find_da_for_token(segments_da, token_offset):
+    for segment in segments_da:
+        offsets = segment[0]
+        start_offset = int(offsets.split(':')[0])
+        end_offset = int(offsets.split(':')[1])
+        if token_offset >= start_offset and token_offset <= end_offset:
+            return segment[1]
+
+
+def find_children_annotations(parent_tweet_id, conversation_tree, list_of_tweet_tuples, previous_text_id, mongo_collection):
+    children = conversation_tree.children(parent_tweet_id)
+    for child in children:
+        tweet_id = child.tag
+        tweet_text = postgres_queries.find_tweet_text(tweet_id)[0]
+        tweet_segments_da = postgres_queries.find_segments(tweet_id)
+        text_id = previous_text_id + 1
+        annotations = queries.find_by_id(mongo_collection, str(tweet_id))
+        original_annotation = list(annotations[:])
+        tweet_tuple = (text_id, tweet_id, tweet_text, tweet_segments_da, parent_tweet_id, original_annotation)
+        list_of_tweet_tuples.append(tweet_tuple)
+        find_children_annotations(tweet_id, conversation_tree, list_of_tweet_tuples, text_id, mongo_collection)
+
+
+def pure_annotation():
+    tweet_id_list, list_of_conversations = rebuild_conversations.conversation_regarding_language() # list of Trees
+    list_of_tweet_tuples = list()
+    collection_annotated_data = mongoDB_configuration.get_collection('DARecognition', 'annotatedTwitterData')
+    for conversation in list_of_conversations:
+        tweet_id = conversation.root
+        if tweet_id is not None:
+            tweet_segments_da = postgres_queries.find_segments(tweet_id)
+            tweet_text = postgres_queries.find_tweet_text(tweet_id)[0]
+            text_id = 0
+            #here mongodb
+            annotations = queries.find_by_id(collection_annotated_data, str(tweet_id))
+            original_annotation = list(annotations[:])
+            tweet_tuple = (text_id, tweet_id, tweet_text, tweet_segments_da, None, original_annotation)# in_replay_to
+            list_of_tweet_tuples.append(tweet_tuple)
+            find_children_annotations(tweet_id, conversation, list_of_tweet_tuples, text_id, collection_annotated_data)
+    return list_of_tweet_tuples
+
+
+list_of_conversation = pure_annotation()
+write_to_xls_pure_annotation(list_of_conversation, '../output2.xlsx')

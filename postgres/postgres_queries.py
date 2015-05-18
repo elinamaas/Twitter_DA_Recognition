@@ -95,3 +95,12 @@ def find_children(tweet_id):
     results = cursor.fetchall()
     postgres_configuration.close_connection(connection)
     return results
+
+
+def find_tweet_text(tweet_id):
+    connection, cursor = postgres_configuration.make_connection()
+    query = 'SELECT tweet_text FROM tweet where tweet_id =' + str(tweet_id)
+    cursor.execute(query)
+    results = cursor.fetchall()
+    postgres_configuration.close_connection(connection)
+    return results[0]
