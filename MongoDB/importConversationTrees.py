@@ -16,6 +16,9 @@ def import_conversations(collection, conversations):
         root_tweet_id = conversation.root_tweet
         root_tweet_id = int(root_tweet_id)
         data['root_tweet_id'] = root_tweet_id
+        # information about depth and width
+        data['depth'] = conversation.find_depth()
+        data['width'] = conversation.find_width()
         conversation_tree = conversation.get_conversation_tree()
         find_children(conversation_tree, root_tweet_id, data)
         json.dumps(data)
@@ -35,9 +38,9 @@ def find_children(conversation, parent_tweet_id, data):
             find_children(conversation, child, data)
 
 
-collectionRawData = mongoDB_configuration.get_collection('DARecognition', 'rawTwitterData')
-collectionConversationTree = mongoDB_configuration.get_collection('DARecognition', 'conversationTree')
-print 'Start building conversation trees...'
-conversations = build_conversation(collectionRawData)
-print 'Start inserting in conversationTree collection...'
-import_conversations(collectionConversationTree, conversations)
+# collectionRawData = mongoDB_configuration.get_collection('DARecognition', 'rawTwitterData')
+# collectionConversationTree = mongoDB_configuration.get_collection('DARecognition', 'conversationTree')
+# print 'Start building conversation trees...'
+# conversations = build_conversation(collectionRawData)
+# print 'Start inserting in conversationTree collection...'
+# import_conversations(collectionConversationTree, conversations)

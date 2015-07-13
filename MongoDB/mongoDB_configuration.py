@@ -9,19 +9,26 @@ from pymongo import Connection
 # mongodb creates databases and collections automatically for you if they dont exist already.
 # The DB will be schown firstly if there is smth already
 
+db_name = 'DARecognition'
+collectionNameAllAnnotations = 'annotatedTwitterData_all_ontologies'
+# collectionNameReducedAnnotation = 'annotatedTwitterData_reduced'
+# collectionNameMinimalAnnotation = 'annotatedTwitterData_minimal'
+pathToAnnotatedData = '../DATA/annotationed/webanno-projectexport/annotation'
+pathAnnotatedDataRAW = 'DATA/annotated_tweets_raw.txt'
 
-def get_collection(dbName, collectionName):
+
+def get_collection(database_name, collection_name):
     # default connection
     connection = Connection()
     # drop Db
     #connection.drop_database(dbName)
     # Getting/Creating  DB
 
-    db = connection[dbName]
+    db = connection[database_name]
     # Getting/Creating Collection
-    collection = db[collectionName]
+    collection = db[collection_name]
     return collection
 
 
-def check_tweets_amount(collectionName):
-    return collectionName.count()
+def check_tweets_amount(collection_name):
+    return collection_name.count()
