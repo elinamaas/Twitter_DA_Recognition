@@ -8,3 +8,6 @@ error_matrix.xlsx
 confusion_matrix.xlsx
 output.xlsx
 output2.xlsx
+tokenisierung-tofix.xlsx
+*.xlsx
+*.xls
