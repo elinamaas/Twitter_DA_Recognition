@@ -6,7 +6,9 @@ class AnnotatedTweetEdit:
     def __init__(self, tweet_id, text_id, text):
         self.tweet_id = tweet_id
         self.text_id = text_id
-        self.tags = collections.defaultdict(dict) #tags for particular offset
+        self.tags_full = collections.defaultdict(dict) #tags for particular offset
+        self.tags_reduced = collections.defaultdict(dict) #tags for particular offset
+        self.tags_minimal = collections.defaultdict(dict) #tags for particular offset
         self.segmentation = {} #start_ofsset:end_offset, occurancy
         self.text = text
         self.word = {}
@@ -30,8 +32,14 @@ class AnnotatedTweetEdit:
     def get_text_id(self):
         return self.text_id
 
-    def get_tags(self):
-        return self.tags
+    def get_tags_full(self):
+        return self.tags_full
+
+    def get_tags_reduced(self):
+        return self.tags_reduced
+
+    def get_tags_minimal(self):
+        return self.tags_minimal
 
     def get_segmentation(self):
         return self.segmentation
@@ -48,37 +56,95 @@ class AnnotatedTweetEdit:
                 self.segmentation[offset] = 1
         return self
 
-    def set_tags(self, offset, da):
-        self.tags[offset][da] = 1
+    def set_tags_full(self, offset, da):
+        self.tags_full[offset][da] = 1
 
-    def add_tag(self, tags_dictionary):
+    def set_tags_reduced(self, offset, da):
+        self.tags_reduced[offset][da] = 1
+
+    def set_tags_minimal(self, offset, da):
+        self.tags_minimal[offset][da] = 1
+
+    def add_tag_full(self, tags_dictionary):
         for offset, da in tags_dictionary.iteritems():
-            if offset in self.get_tags():
-                offset_tags_dictionary = self.tags[offset]
+            if offset in self.get_tags_full():
+                offset_tags_dictionary = self.tags_full[offset]
                 if isinstance(da, str):
                     if da in offset_tags_dictionary:
-                        self.update_tag(offset, da)
+                        self.update_tag_full(offset, da)
                     else:
-                        self.set_tags(offset, da)
+                        self.set_tags_full(offset, da)
                 elif isinstance(da, list):
                     for tag_name in da:
                         if tag_name in offset_tags_dictionary:
-                            self.update_tag(offset, tag_name)
+                            self.update_tag_full(offset, tag_name)
                         else:
-                            self.set_tags(offset, tag_name)
+                            self.set_tags_full(offset, tag_name)
             else:
                 if isinstance(da, str):
-                    self.set_tags(offset, da)
+                    self.set_tags_full(offset, da)
                 else:
                     for tag_name in da:
-                        self.set_tags(offset, tag_name)
+                        self.set_tags_full(offset, tag_name)
         return self
 
-    def update_tag(self, offset, da):
-        self.tags[offset][da] += 1
+    def add_tag_reduced(self, tags_dictionary):
+        for offset, da in tags_dictionary.iteritems():
+            if offset in self.get_tags_reduced():
+                offset_tags_dictionary = self.tags_reduced[offset]
+                if isinstance(da, str):
+                    if da in offset_tags_dictionary:
+                        self.update_tag_reduced(offset, da)
+                    else:
+                        self.set_tags_reduced(offset, da)
+                elif isinstance(da, list):
+                    for tag_name in da:
+                        if tag_name in offset_tags_dictionary:
+                            self.update_tag_reduced(offset, tag_name)
+                        else:
+                            self.set_tags_reduced(offset, tag_name)
+            else:
+                if isinstance(da, str):
+                    self.set_tags_reduced(offset, da)
+                else:
+                    for tag_name in da:
+                        self.set_tags_reduced(offset, tag_name)
+        return self
+
+    def add_tag_minimal(self, tags_dictionary):
+        for offset, da in tags_dictionary.iteritems():
+            if offset in self.get_tags_minimal():
+                offset_tags_dictionary = self.tags_minimal[offset]
+                if isinstance(da, str):
+                    if da in offset_tags_dictionary:
+                        self.update_tag_minimal(offset, da)
+                    else:
+                        self.set_tags_minimal(offset, da)
+                elif isinstance(da, list):
+                    for tag_name in da:
+                        if tag_name in offset_tags_dictionary:
+                            self.update_tag_minimal(offset, tag_name)
+                        else:
+                            self.set_tags_minimal(offset, tag_name)
+            else:
+                if isinstance(da, str):
+                    self.set_tags_minimal(offset, da)
+                else:
+                    for tag_name in da:
+                        self.set_tags_minimal(offset, tag_name)
+        return self
+
+    def update_tag_full(self, offset, da):
+        self.tags_full[offset][da] += 1
+
+    def update_tag_reduced(self, offset, da):
+        self.tags_reduced[offset][da] += 1
+
+    def update_tag_minimal(self, offset, da):
+        self.tags_minimal[offset][da] += 1
 
     def find_offset(self, offset):
-        offset_list = self.tags.keys()
+        offset_list = self.tags_full.keys()
         if offset in offset_list:
             return True
         else:

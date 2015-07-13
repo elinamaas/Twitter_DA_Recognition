@@ -1,13 +1,13 @@
 __author__ = 'snownettle'
 
-from mongoDB import queries, mongoDB_configuration
+from mongoDB import mongoDBQueries, mongoDB_configuration
 from treelib import Tree
 from postgres import postgres_queries
 from prepare_golden_standard import rebuild_conversations
 
 
 def number_of_annotated_tweet(list_of_tweets):
-    print 'There are ', len(list_of_tweets), ' annotated tweets by linguistic students in DB'
+    print 'There are ', len(list_of_tweets), ' tweets annotated tweets by linguistic students in DB'
 
 
 def numbers_of_tweets_agreed_by_three(agreed_with_segmentation, agreed_with_tags):
@@ -21,7 +21,7 @@ def numbers_of_agreed_tweets_after_merging(list_of_tweets, agreed):
     list_of_tweets_done = list()
     for tweet in list_of_tweets:
         same_decision = 0
-        token_dictionary = tweet.get_tags()
+        token_dictionary = tweet.get_tags_full()
         token_number = len(token_dictionary)
         for offset, tags in token_dictionary.iteritems():
             if len(tags) == 1:
@@ -40,7 +40,7 @@ def numbers_of_agreed_tweets_after_merging(list_of_tweets, agreed):
 def unigrams_raw_annotation(list_of_annotated_tweets):
     number_of_unigrams = dict()
     for tweet in list_of_annotated_tweets:
-        tags = tweet.get_tags()
+        tags = tweet.get_tags_full()
         for segment, tag in tags.iteritmes:
             if segment in number_of_unigrams:
                 number_of_unigrams[segment] += 1
@@ -52,9 +52,10 @@ def unigrams_raw_annotation(list_of_annotated_tweets):
 
 
 def students_tweets():# how much tweets were annotated by 1, 2 or 3 students
-    new_list_tweet_german = rebuild_conversations.conversation_regarding_language()
-    collection = mongoDB_configuration.get_collection('DARecognition', 'annotatedTwitterData')
-    results = queries.find_all(collection)
+    new_list_tweet_german, collection_list = rebuild_conversations.conversation_regarding_language()
+    collection = mongoDB_configuration.get_collection(mongoDB_configuration.db_name,
+                                                      mongoDB_configuration.collectionNameAllAnnotations)
+    results = mongoDBQueries.find_all(collection)
     tweets_dict = dict()
     for tweet in results:
         tweet_id = long(tweet['tweet_id'])
@@ -70,7 +71,7 @@ def students_tweets():# how much tweets were annotated by 1, 2 or 3 students
         else:
             statistics[count] = 1
     for students, number_of_tweets in statistics.iteritems():
-        print str(number_of_tweets) + ' were annotated by ' + str(students) + ' students'
+        print str(number_of_tweets) + ' tweets were annotated by ' + str(students) + ' students'
     three_annotators = set()
     for tweet_id, count in tweets_dict.iteritems():
         if count == 3:
@@ -110,7 +111,7 @@ def types_of_conversation():
         for tweet in converastion:
             if tweet[1] is None:
                 conversation_tree.create_node(tweet[0], tweet[0])
-                rebuild_conversations.build_conversation(tweet[0], converastion, conversation_tree)
+                rebuild_conversations.build_conversation_tree(tweet[0], converastion, conversation_tree)
                 depth = conversation_tree.depth() + 1
                 number_of_tweets = len(conversation_tree.all_nodes())
                 #short/long

@@ -3,7 +3,7 @@ import xlsxwriter
 import re
 import rebuild_conversations
 from postgres import postgres_queries
-from mongoDB import queries, mongoDB_configuration
+from mongoDB import mongoDBQueries, mongoDB_configuration
 
 
 def write_to_xlsx_file(list_of_tweets, file_name):
@@ -25,7 +25,7 @@ def write_to_xlsx_file(list_of_tweets, file_name):
             if tweet_text != '':
                 worksheet.write(row, col, text)
                 row += 1
-                tokens = tweet.get_tags()
+                tokens = tweet.get_tags_full()
                 for offset, tags_list in tokens.iteritems():
                     word = tweet.get_word(offset)
                     if len(tags_list) == 1:
@@ -134,7 +134,7 @@ def find_children_annotations(parent_tweet_id, conversation_tree, list_of_tweet_
         tweet_text = postgres_queries.find_tweet_text(tweet_id)[0]
         tweet_segments_da = postgres_queries.find_segments(tweet_id)
         text_id = previous_text_id + 1
-        annotations = queries.find_by_id(mongo_collection, str(tweet_id))
+        annotations = mongoDBQueries.find_by_id(mongo_collection, str(tweet_id))
         original_annotation = list(annotations[:])
         tweet_tuple = (text_id, tweet_id, tweet_text, tweet_segments_da, parent_tweet_id, original_annotation)
         list_of_tweet_tuples.append(tweet_tuple)
@@ -152,13 +152,13 @@ def pure_annotation():
             tweet_text = postgres_queries.find_tweet_text(tweet_id)[0]
             text_id = 0
             #here mongodb
-            annotations = queries.find_by_id(collection_annotated_data, str(tweet_id))
+            annotations = mongoDBQueries.find_by_id(collection_annotated_data, str(tweet_id))
             original_annotation = list(annotations[:])
             tweet_tuple = (text_id, tweet_id, tweet_text, tweet_segments_da, None, original_annotation)# in_replay_to
             list_of_tweet_tuples.append(tweet_tuple)
             find_children_annotations(tweet_id, conversation, list_of_tweet_tuples, text_id, collection_annotated_data)
     return list_of_tweet_tuples
 
-
-list_of_conversation = pure_annotation()
-write_to_xls_pure_annotation(list_of_conversation, '../output2.xlsx')
+#
+# list_of_conversation = pure_annotation()
+# write_to_xls_pure_annotation(list_of_conversation, '../output/annotated.xlsx')

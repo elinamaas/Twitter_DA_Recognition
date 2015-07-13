@@ -12,7 +12,7 @@ import numpy as np
 from da_recognition import dialogue_acts_taxonomy
 
 
-def chance_corrected_coefficient_categories(list_of_tweets): #overall_observed_agreement
+def chance_corrected_coefficient_categories(list_of_tweets, ontology): #overall_observed_agreement
     sum_arg_category = 0
     i = 0 #number_of segments
     number_of_assignments_to_category = dict() # nk
@@ -23,7 +23,10 @@ def chance_corrected_coefficient_categories(list_of_tweets): #overall_observed_a
     overall_observed_agreement = sum_arg_category/float(i)
     expected_agreement = ea(number_of_assignments_to_category, i)
     ccc = (overall_observed_agreement - expected_agreement)/float(1 - expected_agreement)
-    confusion_matrix(seg_confusion_matrix)
+    confusion_matrix(seg_confusion_matrix, ontology)
+    print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+    print 'Inter annotater agreement for dialogue acts:' + '\n'
+    # print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
     print 'Overall observed agreement: ' + str(overall_observed_agreement)
     print 'Expected agreement:' + str(expected_agreement)
     print 'Chance-corrected coefficients: ' + str(ccc)
@@ -47,7 +50,7 @@ def binomial(x, y):
 
 def tag_pro_segments_agreement(tweet, sum_arg, i, number_of_assignments_to_category, seg_confusion_matrix):
     segments = tweet.get_source_segmentation() #set()
-    tokens = tweet.get_tags()
+    tokens = tweet.get_tags_full()
     for segment in segments:
         start_offset = int(segment.split(':')[0])
         tags_variations = tokens[start_offset]
@@ -69,11 +72,11 @@ def tag_pro_segments_agreement(tweet, sum_arg, i, number_of_assignments_to_categ
     return sum_arg, i, seg_confusion_matrix
 
 
-def confusion_matrix(segmentation_agreement):
+def confusion_matrix(segmentation_agreement, ontology):
     segments_list = []
     da_list = []
     segments_list.extend(range(1, len(segmentation_agreement) + 1, 1))
-    da_tree = dialogue_acts_taxonomy.build_da_taxonomy()
+    da_tree = dialogue_acts_taxonomy.build_da_taxonomy_full()
     nodes = da_tree.all_nodes()
     matrix_tuple = list()
     for node in nodes:
@@ -92,13 +95,13 @@ def confusion_matrix(segmentation_agreement):
                 current_tuple[i] = agreement
                 # matrix_tuple = MatrixTuple
         matrix_tuple.append(current_tuple)
-    write_to_file(matrix_tuple, da_list, "confusion_matrix.xlsx")
+    write_to_file(matrix_tuple, da_list, '../DATA/confusion_matrix_' +ontology + '.xlsx')
     error_matrix = make_error_matrix(matrix_tuple, da_list)
     i = 1
     for error_line in error_matrix:
         error_line.insert(0, da_list[i])
         i += 1
-    write_to_file(error_matrix, da_list, "error_matrix.xlsx")
+    write_to_file(error_matrix, da_list, '../DATA/error_matrix_' + ontology + '.xlsx')
 
 
 def make_error_matrix(matrix_tuple, da_list):
@@ -135,9 +138,11 @@ def write_to_file(matrix_tuple, da_list, file_name):
 
 
 def make_list_for_three_annotators(all_tweets, list_with_three):
+    list_with_three = list(list_with_three)
     new_tweet_list = list()
     for tweet in all_tweets:
-        if tweet.get_tweet_id() in list_with_three:
+        tweet_id = long(tweet.get_tweet_id())
+        if tweet_id in list_with_three:
             new_tweet_list.append(tweet)
     return new_tweet_list
 
@@ -156,7 +161,9 @@ def chance_corrected_coefficient_labels(all_tweets, list_with_three): #overall_o
     overall_observed_agreement = arg/float(j)
     expected_agreement = ea(dict_ea, j)
     ccc = (overall_observed_agreement - expected_agreement)/float(1 - expected_agreement)
-    print 'Segmentation:'
+    print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+    print 'Inter annotater agreement for segmentation:' + '\n'
+    # print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
     print 'Overall observed agreement: ' + str(overall_observed_agreement)
     print 'Expected agreement:' + str(expected_agreement)
     print 'Chance-corrected coefficients: ' + str(ccc)
@@ -164,7 +171,7 @@ def chance_corrected_coefficient_labels(all_tweets, list_with_three): #overall_o
 
 def token_label_agreement(tweet, sum_arg_segmentation, j, dict_ea):
     segments = tweet.get_segmentation()
-    tokens = tweet.get_tags()
+    tokens = tweet.get_tags_full()
     end_offset = 4 + len(tokens)
     # for i in_ range(4, end_offset, 1):
     tokens_dict = defaultdict(list)

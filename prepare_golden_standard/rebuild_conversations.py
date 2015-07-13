@@ -3,14 +3,19 @@ from postgres import postgres_queries
 from treelib import Tree
 
 
-def build_conversation(parent_tweet, converastion_raw, conversation_tree):
+def conversation_list_regarding_language():
+    twitter_id, conversation_list = conversation_regarding_language()
+    return conversation_list
+
+
+def build_conversation_tree(parent_tweet, converastion_raw, conversation_tree):
     number_of_tweets = len(converastion_raw)
     i = 0
     while i < number_of_tweets:
         tweet = converastion_raw[i]
         if tweet[1] == parent_tweet:
             conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
-            build_conversation(tweet[0], converastion_raw, conversation_tree)
+            build_conversation_tree(tweet[0], converastion_raw, conversation_tree)
         i += 1
 
 
@@ -21,7 +26,7 @@ def build_conversation_lang(parent_tweet, converastion_raw, conversation_tree):
         tweet = converastion_raw[i]
         if tweet[1] == parent_tweet and tweet[5] is True:
             conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
-            build_conversation(tweet[0], converastion_raw, conversation_tree)
+            build_conversation_tree(tweet[0], converastion_raw, conversation_tree)
         i += 1
 
 #rebuilf conversation, take in account german tweets,with width and depth

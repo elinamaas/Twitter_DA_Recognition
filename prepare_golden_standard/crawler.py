@@ -1,7 +1,7 @@
 __author__ = 'snownettle'
 # Crawling tweets for annotated data, put in the DB.
 
-from mongoDB import queries
+from mongoDB import mongoDBQueries
 from mongoDB import mongoDB_configuration
 import json
 import tweepy
@@ -10,7 +10,7 @@ from general import read_file
 
 
 def get_all_ids(collection):
-    records = queries.find_all(collection)
+    records = mongoDBQueries.find_all(collection)
     tweet_id_list = set()
     for record in records:
         tweet_id = record['tweet_id']
@@ -56,8 +56,3 @@ def crawling(collection, crawled_tweets):
                 continue
 
 
-# content = read_file.readTXT('../DATA/annotated_tweets_raw.txt')
-# crawled_tweets = check_crawled(content)
-#
-# collectionAnnotatedData = mongoDB_configuration.get_collection('DARecognition', 'annotatedTwitterData')
-# crawling(collectionAnnotatedData, crawled_tweets)

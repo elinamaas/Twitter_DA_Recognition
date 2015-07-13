@@ -1,3 +1,5 @@
+import da_recognition.matching_schema
+
 __author__ = 'snownettle'
 import glob
 import os
@@ -5,13 +7,15 @@ import csv
 import xlrd
 import re
 from prepare_golden_standard import annotated_tweet_class, write_to
-from postgres import insert_to_table
+from postgres import insert_to_table, postgres_queries, postgres_configuration
 from mongoDB import importData
+from da_recognition import matching_schema
 from statistics import annotatedData_stat
 
 
 #read original annotated data, import to mongoDB
-def read_annotated_docs(directory_path, collection_annotated_data):
+def import_annotated_docs(directory_path, collection_annotated_data):
+    merged_ontologies = da_recognition.matching_schema.merge_ontologies()
     conversation_id = 0
     data = {}
     id = 1
@@ -59,45 +63,48 @@ def read_annotated_docs(directory_path, collection_annotated_data):
                                     tag = '0'
                                 else:
                                     tag = splitting_tag(row, previous_tag)
-                                    # if row[2] == 'O' or row[2] == '0':
-                                    #     tag = '0'
-                                    # else:
-                                    #     if previous_tag == '0':
-                                    #         tag = ''
-                                    #         if '|' in row[2]:
-                                    #             new_tags = re.split('|', row[2])
-                                    #             for new_tag in new_tags:
-                                    #                 if tag == '':
-                                    #                     tag += 'B-' + re.split('-', new_tag)[1]
-                                    #                 else:
-                                    #                     tag += '|' + 'B-' + re.split('-', new_tag)[1]
-                                    #         else:
-                                    #             tag = 'B-' + re.split('-', row[2])[1]
-                                    #     else:
-                                    #         tag = row[2]
+
                             else:
                                 tag = splitting_tag(row, previous_tag)
-                                # if row[2] == 'O' or row[2] == '0':
-                                #     tag = '0'
-                                # else:
-                                #     if previous_tag == '0':
-                                #         tag = ''
-                                #         if '|' in row[2]:
-                                #             new_tags = row[2].split('|')
-                                #             for new_tag in new_tags:
-                                #                 if tag == '':
-                                #                     tag += 'B-' + re.split('-', new_tag)[1]
-                                #                 else:
-                                #                     tag += '|' + 'B-' + re.split('-', new_tag)[1]
-                                #         else:
-                                #             tag = 'B-' + re.split('-', row[2])[1]
-                                #     else:
-                                #         tag = row[2]
-                            data[re.split('-', row[0])[1]] = [token, tag]
+
+                            tag_reduced, tag_minimal = set_reduced_minimal_tags(tag, merged_ontologies)
+                            data[re.split('-', row[0])[1]] = [token, tag, tag_reduced, tag_minimal]
                             previous_tag = tag
                         elif len(row) < 3:
                             conversation_id = 1
                     previous_row = row
+
+
+def set_reduced_minimal_tags(da_full, merged_ontologies):
+    if da_full != '0':
+        if '|' in da_full:
+            das_full = da_full.split('|')
+            da_reduced_label = ''
+            da_minimal_label = ''
+            for da in das_full:
+                label = da.split('-')[0]
+                da_full_no_label = da.split('-')[1]
+                da_reduced = merged_ontologies[da_full_no_label][0]
+                da_minimal = merged_ontologies[da_full_no_label][1]
+                da_reduced_label_part = label + '-' + da_reduced
+                da_reduced_label += da_reduced_label_part + '|'
+                da_minimal_label_part = label + '-' + da_minimal
+                da_minimal_label += da_minimal_label_part + '|'
+            da_reduced_label = da_reduced_label[:-1]
+            da_minimal_label = da_minimal_label[:-1]
+
+        else:
+            label = da_full.split('-')[0]
+            da_full_no_label = da_full.split('-')[1]
+            da_reduced = merged_ontologies[da_full_no_label][0]
+            da_minimal = merged_ontologies[da_full_no_label][1]
+            da_reduced_label = label + '-' + da_reduced
+            da_minimal_label = label + '-' + da_minimal
+
+    else:
+        da_reduced_label = '0'
+        da_minimal_label = '0'
+    return da_reduced_label, da_minimal_label
 
 
 def splitting_tag(row, previous_tag):
@@ -167,7 +174,7 @@ def concatenate_done_tweets():
     print 'There are ', len(difference_list), ' tweets to be reviewed.'
     # annotatedData_stat.segments_in_tweet(tweets_list)
     # write_to.write_to_xlsx_file_final(tweets_list, 'DATA/goldenStandard/final_tweets_done.xlsx')
-    insert_to_table.insert_annotated_tweets(tweets_list)
+    insert_to_table.insert_annotated_tweets_to_segment_table(tweets_list)
     return tweets_list, difference_list
 
 
