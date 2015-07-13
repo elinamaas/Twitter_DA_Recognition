@@ -2,12 +2,12 @@ __author__ = 'snownettle'
 from postgres import insert_to_table, postgres_queries, postgres_configuration, update_table
 from readData import editedAnnotatedData
 from da_recognition import supervised_learning
-from evaluation import da_evaluation
+# from evaluation import da_evaluation
 # from mongoDB import mongoDB_configuration, queries
 # from prepare_golden_standard.annotated_tweets_final import editing_annotated_tweets
 # from prepare_golden_standard import insert_to_postgres
-
-from da_recognition import baseline
+#
+# from da_recognition import baseline
 
 # database = 'DARecognition'
 # #

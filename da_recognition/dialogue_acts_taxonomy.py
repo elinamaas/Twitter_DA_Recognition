@@ -4,7 +4,7 @@ __author__ = 'snownettle'
 from treelib import Tree
 
 
-def build_da_taxonomy():
+def build_da_taxonomy_full():
     da_taxonomy = Tree()
     da_taxonomy.create_node('DIT++ Taxonomy', 'DIT++ Taxonomy')
 
@@ -97,6 +97,7 @@ def build_da_taxonomy():
     # da_taxonomy.show()
     #print da_taxonomy.depth()
     # print da_taxonomy.is_branch('DIT++ Taxonomy')
+    da_taxonomy.all_nodes()
     return da_taxonomy
 
 
@@ -120,8 +121,52 @@ def check_related_tags(taxonomy, tag1, tag2):
         return None
 
 
+def build_da_taxonomy_reduced():
+    da_taxonomy = Tree()
+    da_taxonomy.create_node('DIT++ Taxonomy', 'DIT++ Taxonomy')
+    da_taxonomy.create_node('ADF', 'ADF', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('IT', 'IT', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('IT_IP', 'IT_IP', parent='IT')
+    da_taxonomy.create_node('IT_IP_Inform', 'IT_IP_Inform', parent='IT_IP')
+    da_taxonomy.create_node('IT_IP_Inform_Agreement', 'IT_IP_Inform_Agreement', parent='IT_IP_Inform')
+    da_taxonomy.create_node('IT_IP_Inform_Disagreement', 'IT_IP_Inform_Disagreement', parent='IT_IP_Inform')
+    da_taxonomy.create_node('IT_IS', 'IT_IS', parent='IT')
+    da_taxonomy.create_node('DSM', 'DSM', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('OCM', 'OCM', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('PCM', 'PCM', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('SOCIAL', 'SOCIAL', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('OTHER', 'OTHER', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('0', '0', parent='DIT++ Taxonomy')
+
+    return da_taxonomy
+
+
+def build_da_taxonomy_minimal():
+    da_taxonomy = Tree()
+    da_taxonomy.create_node('DIT++ Taxonomy', 'DIT++ Taxonomy')
+
+    da_taxonomy.create_node('ADF', 'ADF', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('IT_IP', 'IT_IP', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('IT_IS', 'IT_IS', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('DSM', 'DSM', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('OCM', 'OCM', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('PCM', 'PCM', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('SOCIAL', 'SOCIAL', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('OTHER', 'OTHER', parent='DIT++ Taxonomy')
+    da_taxonomy.create_node('0', '0', parent='DIT++ Taxonomy')
+
+    return da_taxonomy
+
+def build_taxonomy(taxonomy_name):
+    if taxonomy_name == 'full':
+        return build_da_taxonomy_full()
+    elif taxonomy_name == 'reduced':
+        return build_da_taxonomy_reduced()
+    else:
+        return build_da_taxonomy_minimal()
 # tree = build_da_taxonomy()
 # a = tree.all_nodes()
+# print tree.depth()
 # for node in a:
 #     print node.tag
 # root = tree.root
