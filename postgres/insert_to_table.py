@@ -4,6 +4,8 @@ import postgres_configuration
 from da_recognition import dialogue_acts_taxonomy, matching_schema
 from general import check_lang
 import postgres_queries
+from mongoDB import mongoDBQueries, mongoDB_configuration
+from general import check_lang
 
 
 def insert_raw_tweets(tweets):
@@ -12,6 +14,38 @@ def insert_raw_tweets(tweets):
             "VALUES (%s, %s, %s, %s, %s, %s) "
     cursor.executemany(query, tweets)
     connection.commit()
+    postgres_configuration.close_connection(connection)
+
+
+def insert_into_edit_tweet_table(conversation_list):
+    collection = mongoDB_configuration.get_collection(mongoDB_configuration.db_name,
+                                                      mongoDB_configuration.collectionNameAllAnnotations)
+    connection, cursor = postgres_configuration.make_connection()
+    conversation_id = 1
+    for conversation in conversation_list:
+        all_tweets = conversation.all_nodes()
+        for tweet in all_tweets:
+            tweet_data = mongoDBQueries.find_by_id(collection, tweet.tag)[0]
+            tweet_id = tweet_data['tweet_id']
+            if tweet_data['text_id'] == 0:
+                parent_tweet = 'NULL'
+            else:
+                parent_tweet = conversation.parent(tweet_id).tag
+            tweet_text = tweet_data['text'].split('user=')[1]
+            username = tweet_text.split(' ')[0]
+
+            if tweet_text != '':
+
+                tweet_text = tweet_text.split(username)[1]
+                if '\'' in tweet_text:
+                    tweet_text = tweet_text.replace('\'', '\'\'')
+                german = check_lang.check_german(tweet_text)
+                query = "INSERT INTO Tweet (Tweet_id, In_replay_to, Conversation_id, Tweet_text, Annotated, German) " \
+                    "VALUES (%s, %s, %s, \'%s\', %s, %s) " % (tweet_id, parent_tweet, conversation_id, tweet_text, True, german)
+                # print query
+                cursor.execute(query)
+                connection.commit()
+        conversation_id += 1
     postgres_configuration.close_connection(connection)
 
 
@@ -28,6 +62,7 @@ def insert_dialogue_act_names_full():
         cursor.executemany(query, da_tuple)
         connection.commit()
         postgres_configuration.close_connection(connection)
+
 
 def insert_dialogue_act_names_reduced():
     if select_da('Dialogue_act_reduced'):
@@ -59,6 +94,7 @@ def insert_dialogue_act_names_minimal():
         cursor.executemany(query, da_tuple)
         connection.commit()
         postgres_configuration.close_connection(connection)
+
 
 def find_children(tree, parent, da_list):
     if parent == 'DIT++ Taxonomy':
@@ -144,6 +180,7 @@ def insert_annotated_tweet(tweet):
     connection, cursor = postgres_configuration.make_connection()
     tweet_id = tweet.get_tweet_id()
     tweet_text = tweet.get_tweet_text()
+    username = tweet.get_username()
     if '\'' in tweet_text:
         tweet_text = tweet_text.replace('\'', '\'\'')
     in_replay_to = str(tweet.get_in_replay_to_id())
@@ -153,8 +190,9 @@ def insert_annotated_tweet(tweet):
     conversation_id = tweet.get_conversation_id()
     german = check_lang.check_german(tweet_text)
     segments = tweet.get_segments()
-    query = 'INSERT INTO Tweet (Tweet_id, In_replay_to, Conversation_id, Tweet_text, Annotated, German) ' \
-            'VALUES (%s, %s, %s , \'%s \', %s, %s)' % (tweet_id, in_replay_to, conversation_id, tweet_text, True, german)
+    query = 'INSERT INTO Tweet (Tweet_id, UserName In_replay_to, Conversation_id, Tweet_text, Annotated, German) ' \
+            'VALUES (%s, %s, %s , \'%s \', %s, %s)' \
+            % (tweet_id, username, in_replay_to, conversation_id, tweet_text, True, german)
     cursor.execute(query)
     connection.commit()
     token_dict_list = list()

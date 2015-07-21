@@ -8,10 +8,11 @@ fullOntologyTable = 'Dialogue_act_full'
 reducedOntologyTable = 'Dialogue_act_reduced'
 minimalOntologyTable = 'Dialogue_act_minimal'
 tweetTable = 'Tweet'
+editingTweetTable = 'EditTweet'
 annotatedTokensTable = 'Annotated_token_tweet'
 segmentationTable = 'Segmentation'
 segmentationPredictionTable = 'Segmentation_Prediction'
-segmentationUtterance = 'Segments_utterance'
+segmentationUtteranceTable = 'Segments_utterance'
 
 
 def create_db():
@@ -28,7 +29,11 @@ def create_db():
         # cur.execute('drop table Tweet')
         cur.execute('CREATE TYPE e_position AS ENUM (\'start\', \'end\', \'intermediate\')')
 
-        cur.execute("CREATE TABLE IF NOT EXISTS Tweet(Tweet_id BIGINT PRIMARY KEY, "
+        cur.execute("CREATE TABLE IF NOT EXISTS Tweet(Tweet_id BIGINT PRIMARY KEY, UserName VARCHAR(1024)"
+                    "In_replay_to BIGINT, Conversation_id BIGINT, Tweet_text VARCHAR(1024), "
+                    "Annotated BOOLEAN, German Boolean, position_in_conversation e_position )")
+
+        cur.execute("CREATE TABLE IF NOT EXISTS EditTweet(Tweet_id BIGINT PRIMARY KEY, "
                     "In_replay_to BIGINT, Conversation_id BIGINT, Tweet_text VARCHAR(1024), "
                     "Annotated BOOLEAN, German Boolean, position_in_conversation e_position )")
 
@@ -170,7 +175,13 @@ def close_connection(connection):
     connection.close()
 
 
-def check_if_exists():
+def check_if_exists_tweet_table():
     connection, cursor = make_connection()
     cursor.execute('select * from information_schema.tables where table_name=\'tweet\'')
     return bool(cursor.rowcount)
+
+
+# def check_if_exists_edit_tweet_table():
+#     connection, cursor = make_connection()
+#     cursor.execute('select * from information_schema.tables where table_name=\'edittweet\'')
+#     return bool(cursor.rowcount)
