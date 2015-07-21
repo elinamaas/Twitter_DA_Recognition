@@ -29,7 +29,7 @@ def create_db():
         # cur.execute('drop table Tweet')
         cur.execute('CREATE TYPE e_position AS ENUM (\'start\', \'end\', \'intermediate\')')
 
-        cur.execute("CREATE TABLE IF NOT EXISTS Tweet(Tweet_id BIGINT PRIMARY KEY, UserName VARCHAR(1024)"
+        cur.execute("CREATE TABLE IF NOT EXISTS Tweet(Tweet_id BIGINT PRIMARY KEY, UserName VARCHAR(1024), "
                     "In_replay_to BIGINT, Conversation_id BIGINT, Tweet_text VARCHAR(1024), "
                     "Annotated BOOLEAN, German Boolean, position_in_conversation e_position )")
 

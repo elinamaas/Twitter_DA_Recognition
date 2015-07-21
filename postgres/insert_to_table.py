@@ -190,7 +190,7 @@ def insert_annotated_tweet(tweet):
     conversation_id = tweet.get_conversation_id()
     german = check_lang.check_german(tweet_text)
     segments = tweet.get_segments()
-    query = 'INSERT INTO Tweet (Tweet_id, UserName In_replay_to, Conversation_id, Tweet_text, Annotated, German) ' \
+    query = 'INSERT INTO Tweet (Tweet_id, UserName, In_replay_to, Conversation_id, Tweet_text, Annotated, German) ' \
             'VALUES (%s, %s, %s , \'%s \', %s, %s)' \
             % (tweet_id, username, in_replay_to, conversation_id, tweet_text, True, german)
     cursor.execute(query)
