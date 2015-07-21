@@ -20,10 +20,11 @@ class Tweet:
 
 
 class AnnotatedTweetFinal:
-    def __init__(self, tweet_id, tweet_text, in_replay_to, conversation_id):
+    def __init__(self, tweet_id, tweet_text, in_replay_to, conversation_id, username):
         self.tweet_id = tweet_id
         self.tweet_text = tweet_text
         self.in_replay_to = in_replay_to
+        self.username = username
         self.tokens = dict() # offset, [word, da]
         self.segments = dict() #start-end offset, da
         self.conversation_id = conversation_id
@@ -36,6 +37,9 @@ class AnnotatedTweetFinal:
 
     def get_tweet_text(self):
         return self.tweet_text
+
+    def get_username(self):
+        return self.username
 
     def get_in_replay_to_id(self):
         return self.in_replay_to
