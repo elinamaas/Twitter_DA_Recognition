@@ -25,6 +25,7 @@ def get_collection(database_name, collection_name):
     db = connection[database_name]
     # Getting/Creating Collection
     collection = db[collection_name]
+
     return collection
 
 

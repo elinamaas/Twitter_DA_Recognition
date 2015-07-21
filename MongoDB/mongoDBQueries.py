@@ -39,8 +39,16 @@ def find_by_id(collection, tweet_id):
     return collection.find({'tweet_id': tweet_id})
 
 
+def find_all_conversation_id(collection):
+    return collection.distinct('conversation_id')
+
+
+def find_by_conversation_id(collection, conversation_id):
+    return collection.find({'conversation_id': conversation_id}).sort('text_id', 1)
+
+
 def find_by_id_raw(collection, tweet_id):
-    return collection.find_one({'id': tweet_id})
+    return collection.find_one({'tweet_id': tweet_id})
 
 
 def search_replays(collection, tweet_id):
