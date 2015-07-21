@@ -3,15 +3,7 @@ import collections
 
 import nltk
 from nltk import WhitespaceTokenizer
-
 import postgres_configuration
-
-da_full_table = 'dialogue_act_full'
-da_reduced_table = 'dialogue_act_reduced'
-da_min_table = 'dialogue_act_minimal'
-segmentation_table = 'segmentation'
-segments_utterance_table = 'segments_utterance'
-tweet_table = 'tweet'
 
 
 def find_annotated_conversation_number():
@@ -76,25 +68,21 @@ def find_das_for_tweet(tweet_id):
 
 def find_da_unigrams(taxonomy):
     connection, cursor = postgres_configuration.make_connection()
-    global da_full_table
-    global segmentation_table
-    global da_reduced_table
-    global da_min_table
     if taxonomy == 'full':
         query = 'select count(s.dialogue_act_id_full), da_full.dialogue_act_name ' \
-                'from ' + segmentation_table + ' as s, ' + da_full_table + ' as da_full ' \
+                'from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.fullOntologyTable + ' as da_full ' \
                 'where s.dialogue_act_id_full = da_full.dialogue_act_id ' \
                 'group by s.dialogue_act_id_full, da_full.dialogue_act_name ' \
                 'order by count(s.dialogue_act_id_full) desc'
     elif taxonomy == 'reduced':
         query = 'select count(s.dialogue_act_id_reduced), da_reduced.dialogue_act_name ' \
-            'from ' + segmentation_table + ' as s, ' + da_reduced_table + ' as da_reduced' \
+            'from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.reducedOntologyTable + ' as da_reduced' \
             'where s.dialogue_act_id_reduced = da_reduced.dialogue_act_id ' \
             'group by s.dialogue_act_id_reduced, da_reduced.dialogue_act_name ' \
             'order by count(s.dialogue_act_id_reduced) desc'
     else:
         query = 'select count(s.dialogue_act_id_min), da_min.dialogue_act_name ' \
-            'from ' + segmentation_table + 'as s, ' + da_min_table + ' as da_min ' \
+            'from ' + postgres_configuration.segmentationTable + 'as s, ' + postgres_configuration.minimalOntologyTable + ' as da_min ' \
             'where s.dialogue_act_min_full = da_min.dialogue_act_id ' \
             'group by s.dialogue_act_id_min, da_min.dialogue_act_name ' \
             'order by count(s.dialogue_act_id_min) desc'
@@ -106,14 +94,10 @@ def find_da_unigrams(taxonomy):
 
 
 def find_segments(tweet_id):
-    global da_full_table
-    global segmentation_table
-    global da_reduced_table
-    global da_min_table
     connection, cursor = postgres_configuration.make_connection()
     query = 'select s.segmentation_offsets, da_full.dialogue_act_name, da_reduced.dialogue_act_name, ' \
-            'da_min.dialogue_act_name from ' + segmentation_table + ' as s, ' + da_full_table + ' as da_full, '\
-            + da_reduced_table + ' as da_reduced, ' + da_min_table + ' as da_min where s.tweet_id =' + str(tweet_id) \
+            'da_min.dialogue_act_name from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.fullOntologyTable + ' as da_full, '\
+            + postgres_configuration.reducedOntologyTable + ' as da_reduced, ' + postgres_configuration.minimalOntologyTable + ' as da_min where s.tweet_id =' + str(tweet_id) \
             + 'and s.dialogue_act_id_full = da_full.dialogue_act_id ' \
               'and s.dialogue_act_id_reduced = da_reduced.dialogue_act_id ' \
               'and s.dialogue_act_id_min = da_min.dialogue_act_id'
@@ -123,15 +107,22 @@ def find_segments(tweet_id):
     postgres_configuration.close_connection(connection)
     return results
 
+
+def count_segments(tweet_id):
+    connection, cursor = postgres_configuration.make_connection()
+    query = 'select count(s.segmentation_offsets) from ' + postgres_configuration.segmentationTable + ' as s ' \
+            'where s.tweet_id =' + str(tweet_id)
+    cursor.execute(query)
+    results = cursor.fetchall()
+    postgres_configuration.close_connection(connection)
+    return int(results[0][0])
+
+
 def find_segments_utterance(tweet_id):
-    global da_full_table
-    global segmentation_table
-    global da_reduced_table
-    global da_min_table
     connection, cursor = postgres_configuration.make_connection()
     query = 'select s.segmentation_offsets, s.utterance, da_full.dialogue_act_name, da_reduced.dialogue_act_name, ' \
-            'da_min.dialogue_act_name from ' + segments_utterance_table + ' as s, ' + da_full_table + ' as da_full, '\
-            + da_reduced_table + ' as da_reduced, ' + da_min_table + ' as da_min where s.tweet_id =' + str(tweet_id) \
+            'da_min.dialogue_act_name from ' + postgres_configuration.segmentationUtteranceTable + ' as s, ' + postgres_configuration.fullOntologyTable + ' as da_full, '\
+            + postgres_configuration.reducedOntologyTable + ' as da_reduced, ' + postgres_configuration.minimalOntologyTable + ' as da_min where s.tweet_id =' + str(tweet_id) \
             + 'and s.dialogue_act_id_full = da_full.dialogue_act_id ' \
               'and s.dialogue_act_id_reduced = da_reduced.dialogue_act_id ' \
               'and s.dialogue_act_id_min = da_min.dialogue_act_id'
@@ -196,13 +187,13 @@ def find_da_for_segment(tweet_id, segment_offset, taxonomy):
     connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
         query = 'select dialogue_act_id_full from segmentation ' \
-                'where tweet_id = ' + str(tweet_id) + ' and segmentation_offsets =\''+ segment_offset+ '\''
+                'where tweet_id = ' + str(tweet_id) + ' and segmentation_offsets =\'' + segment_offset+ '\''
     elif taxonomy == 'reduced':
         query = 'select dialogue_act_id_reduced from segmentation ' \
-                'where tweet_id = ' + str(tweet_id) + ' and segmentation_offsets =\''+ segment_offset+ '\''
+                'where tweet_id = ' + str(tweet_id) + ' and segmentation_offsets =\'' + segment_offset+ '\''
     else:
         query = 'select dialogue_act_id_min from segmentation ' \
-                'where tweet_id = ' + str(tweet_id) + ' and segmentation_offsets =\''+ segment_offset+ '\''
+                'where tweet_id = ' + str(tweet_id) + ' and segmentation_offsets =\'' + segment_offset+ '\''
     cursor.execute(query)
     results = cursor.fetchall()
     postgres_configuration.close_connection(connection)
@@ -242,15 +233,15 @@ def find_all_da_occurances_taxonomy(table, da, taxonomy):
 def update_da_prediction(da_name, tweet_id, offset, taxonomy):
     connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
-        da_id = find_da_by_name(da_name, da_full_table)
+        da_id = find_da_by_name(da_name, postgres_configuration.fullOntologyTable)
         query = 'update segmentation_prediction set dialogue_act_id_full = ' + da_id + \
                 ' where tweet_id = ' + tweet_id + ' and segmentation_offsets = ' + offset
     elif taxonomy == 'reduced':
-        da_id = find_da_by_name(da_name, da_reduced_table)
+        da_id = find_da_by_name(da_name, postgres_configuration.fullOntologyTable)
         query = 'update segmentation_prediction set dialogue_act_id_reduced = ' + da_id + \
                 ' where tweet_id = ' + tweet_id + ' and segmentation_offsets = ' + offset
     else:
-        da_id = find_da_by_name(da_name, da_min_table)
+        da_id = find_da_by_name(da_name, postgres_configuration.minimalOntologyTable)
         query = 'update segmentation_prediction set dialogue_act_id_min = ' + da_id + \
                 ' where tweet_id = ' + tweet_id + ' and segmentation_offsets = ' + offset
     cursor.execute(query)
@@ -274,14 +265,14 @@ def find_tokens_by_offset(tweet_id, start_offset, end_offset):
 def find_utterance(taxonomy):
     connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
-        query = 'select s.utterance, da.dialogue_act_name from ' + segments_utterance_table + ' as s, ' \
-                + da_full_table + ' as da where s.dialogue_act_id_full = da.dialogue_act_id'
+        query = 'select s.utterance, da.dialogue_act_name from ' + postgres_configuration.segmentationUtteranceTable + ' as s, ' \
+                + postgres_configuration.fullOntologyTable + ' as da where s.dialogue_act_id_full = da.dialogue_act_id'
     elif taxonomy == 'reduced':
-        query = 'select s.utterance, da.dialogue_act_name from ' + segments_utterance_table + ' as s, ' \
-                + da_reduced_table + ' as da where s.dialogue_act_id_reduced = da.dialogue_act_id'
+        query = 'select s.utterance, da.dialogue_act_name from ' + postgres_configuration.segmentationUtteranceTable + ' as s, ' \
+                + postgres_configuration.reducedOntologyTable + ' as da where s.dialogue_act_id_reduced = da.dialogue_act_id'
     else:
-        query = 'select s.utterance, da.dialogue_act_name from ' + segments_utterance_table + ' as s, ' \
-                + da_min_table + ' as da where s.dialogue_act_id_min = da.dialogue_act_id'
+        query = 'select s.utterance, da.dialogue_act_name from ' + postgres_configuration.segmentationUtteranceTable + ' as s, ' \
+                + postgres_configuration.minimalOntologyTable + ' as da where s.dialogue_act_id_min = da.dialogue_act_id'
     cursor.execute(query)
     results = cursor.fetchall()
     postgres_configuration.close_connection(connection)
@@ -303,16 +294,16 @@ def count_segments_training_set(training_set):
 def find_utterance_tweet(taxonomy, tweet_id):
     connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
-        query = 'select s.utterance, da.dialogue_act_name from ' + segments_utterance_table + ' as s, ' \
-                + da_full_table + ' as da where s.dialogue_act_id_full = da.dialogue_act_id ' \
+        query = 'select s.utterance, da.dialogue_act_name from ' + postgres_configuration.segmentationUtteranceTable + ' as s, ' \
+                + postgres_configuration.fullOntologyTable + ' as da where s.dialogue_act_id_full = da.dialogue_act_id ' \
                                   'and s.tweet_id= ' + str(tweet_id)
     elif taxonomy == 'reduced':
-        query = 'select s.utterance, da.dialogue_act_name from ' + segments_utterance_table + ' as s, ' \
-                + da_reduced_table + ' as da where s.dialogue_act_id_reduced = da.dialogue_act_id ' \
+        query = 'select s.utterance, da.dialogue_act_name from ' + postgres_configuration.segmentationUtteranceTable + ' as s, ' \
+                + postgres_configuration.reducedOntologyTable + ' as da where s.dialogue_act_id_reduced = da.dialogue_act_id ' \
                                      'and s.tweet_id= ' + str(tweet_id)
     else:
-        query = 'select s.utterance, da.dialogue_act_name from ' + segments_utterance_table + ' as s, ' \
-                + da_min_table + ' as da where s.dialogue_act_id_min = da.dialogue_act_id ' \
+        query = 'select s.utterance, da.dialogue_act_name from ' + postgres_configuration.segmentationUtteranceTable + ' as s, ' \
+                + postgres_configuration.minimalOntologyTable + ' as da where s.dialogue_act_id_min = da.dialogue_act_id ' \
                                  'and s.tweet_id= ' + str(tweet_id)
     cursor.execute(query)
     results = cursor.fetchall()

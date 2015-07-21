@@ -9,6 +9,7 @@ from prepare_golden_standard import inter_annotater_agreement
 from statistics import annotatedData_stat
 from prepare_golden_standard.rebuild_conversations import delete_non_german_tweets_from_conversation, \
     conversation_regarding_language
+from postgres import postgres_queries
 
 
 def iaa_ontologies(collectionAnnotatedData, ontology):
@@ -17,6 +18,7 @@ def iaa_ontologies(collectionAnnotatedData, ontology):
     new_tweets_lang, conversation_list = conversation_regarding_language()
     #delete not german tweets
     list_of_annotated_tweets = delete_non_german_tweets_from_conversation(list_of_annotated_tweets, new_tweets_lang)
+
     agreed_with_segmentation, agreed, tweets_to_edit = numbers_of_tweets_agreed_by_three(list_of_annotated_tweets)
     tweet_id_three_annotator = annotatedData_stat.students_tweets()
 

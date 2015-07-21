@@ -1,6 +1,7 @@
 __author__ = 'snownettle'
 from postgres import postgres_queries
 from treelib import Tree
+from mongoDB import mongoDBQueries
 
 
 def conversation_list_regarding_language():
@@ -8,25 +9,25 @@ def conversation_list_regarding_language():
     return conversation_list
 
 
-def build_conversation_tree(parent_tweet, converastion_raw, conversation_tree):
-    number_of_tweets = len(converastion_raw)
+def build_conversation_tree(parent_tweet, converasation_raw, conversation_tree):
+    number_of_tweets = len(converasation_raw)
     i = 0
     while i < number_of_tweets:
-        tweet = converastion_raw[i]
+        tweet = converasation_raw[i]
         if tweet[1] == parent_tweet:
             conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
-            build_conversation_tree(tweet[0], converastion_raw, conversation_tree)
+            build_conversation_tree(tweet[0], converasation_raw, conversation_tree)
         i += 1
 
 
-def build_conversation_lang(parent_tweet, converastion_raw, conversation_tree):
-    number_of_tweets = len(converastion_raw)
+def build_conversation_lang(parent_tweet, converasation_raw, conversation_tree):
+    number_of_tweets = len(converasation_raw)
     i = 0
     while i < number_of_tweets:
-        tweet = converastion_raw[i]
+        tweet = converasation_raw[i]
         if tweet[1] == parent_tweet and tweet[5] is True:
             conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
-            build_conversation_tree(tweet[0], converastion_raw, conversation_tree)
+            build_conversation_tree(tweet[0], converasation_raw, conversation_tree)
         i += 1
 
 #rebuilf conversation, take in account german tweets,with width and depth
@@ -76,7 +77,9 @@ def conversation_regarding_language():
         for node in nodes:
             new_tweet_list_id.append(node.tag)
         number += len(con.all_nodes())
-
+    # print len(new_tweet_list_id)
+    # for tweet_id in new_tweet_list_id:
+    #     print tweet_id
     return new_tweet_list_id, conversation_list
 
 
@@ -87,3 +90,32 @@ def delete_non_german_tweets_from_conversation(old_tweets, tweet_german):
         if tweet_id in tweet_german:
             new_list_tweet_only_german.append(tweet)
     return new_list_tweet_only_german
+
+
+def build_conversation_from_mongo(collection_name):
+    tweet_ids_list = list()
+    conversation_list = list()
+    records = mongoDBQueries.find_all_conversation_id(collection_name)
+    for conversation_id in records:
+        conversation_tree = Tree()
+        help_dictionary = dict()
+        conversation_id = int(conversation_id)
+        tweets = mongoDBQueries.find_by_conversation_id(collection_name, conversation_id)
+        for tweet in tweets:
+            tweet_id = str(tweet['tweet_id']).replace(' ', '')
+            if tweet_id not in tweet_ids_list:
+                tweet_ids_list.append(tweet_id)
+                text_id = tweet['text_id']
+                if text_id == 0:
+                    conversation_tree.create_node(tweet_id, tweet_id)
+                    help_dictionary[text_id] = tweet_id
+                else:
+                    # text_id = tweet['text_id']
+                    parent_tweet = help_dictionary[text_id-1]
+                    help_dictionary[text_id] = tweet_id
+                    conversation_tree.create_node(tweet_id, tweet_id, parent=parent_tweet)
+        conversation_list.append(conversation_tree)
+    return conversation_list
+
+
+# conversation_regarding_language()

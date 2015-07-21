@@ -9,6 +9,8 @@ import xlsxwriter
 from da_recognition import dialogue_acts_taxonomy
 
 
+# raw
+
 def build_conversation():
     # collection_conversation_tree = mongoDB_configuration.get_collection('DARecognition', 'conversationTree')
     collection_raw = mongoDB_configuration.get_collection('DARecognition', 'rawTwitterData')
@@ -128,9 +130,9 @@ def find_children(collection, conversation_tree, parent_tweet, list_of_tweets):
 
 
 # def build_conversation_tree()
-short, long = build_conversation()
-# conversation_list = short + long
-file_name = '../output/short_conversations.xls'
-write_to_file(short, file_name)
-file_name = '../output/long_conversations.xls'
-write_to_file(long, file_name)
+# short, long = build_conversation()
+# # conversation_list = short + long
+# file_name = '../output/short_conversations.xls'
+# write_to_file(short, file_name)
+# file_name = '../output/long_conversations.xls'
+# write_to_file(long, file_name)
