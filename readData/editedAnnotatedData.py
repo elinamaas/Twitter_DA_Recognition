@@ -19,9 +19,10 @@ def import_golden_standard_postgres(filename):
         elif '#tweet' in cell_value:
             tweet_id = cell_value.split('#tweet_id=')[1].split('#')[0]
             in_replay_to = cell_value.split('#in_replay_to=')[1].split('#')[0]
+            username = cell_value.split('#username=')[1].split('#')[0]
             tweet_text = cell_value.split('#tweet_text=')[1]
             # text_id = row[0].split('#text_id=')[1].split('#')[0]
-            tweet = AnnotatedTweetFinal(tweet_id, tweet_text, in_replay_to, conversation_id)
+            tweet = AnnotatedTweetFinal(tweet_id, tweet_text, in_replay_to, conversation_id, username)
         elif 'conversation_id' in cell_value:
              conversation_id = cell_value.split('conversation_id=')[1]
         elif cell_value == '':

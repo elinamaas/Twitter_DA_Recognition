@@ -1,5 +1,6 @@
 __author__ = 'snownettle'
 import xlsxwriter
+import xlrd
 import re
 import rebuild_conversations
 from postgres import postgres_queries
@@ -158,6 +159,39 @@ def pure_annotation():
             list_of_tweet_tuples.append(tweet_tuple)
             find_children_annotations(tweet_id, conversation, list_of_tweet_tuples, text_id, collection_annotated_data)
     return list_of_tweet_tuples
+
+
+def add_user_information(output_filename, input_filename):
+    workbook_input = xlsxwriter.Workbook(input_filename)
+    worksheet_input = workbook_input.add_worksheet()
+
+    mongoDBCollection = mongoDB_configuration.get_collection(mongoDB_configuration.db_name, mongoDB_configuration.collectionNameAllAnnotations)
+    # tweets_id = set()
+    workbook = xlrd.open_workbook(output_filename)
+    worksheet = workbook.sheet_by_name('Sheet1')
+    num_rows = worksheet.nrows - 1
+    curr_row = -1
+    while curr_row < num_rows:
+        curr_row += 1
+        cell_value = worksheet.cell_value(curr_row, 0)
+
+        if '#tweet' in cell_value:
+            tweet_id = str(cell_value.split('#tweet_id=')[1].split('#')[0])
+            tweet_id = tweet_id.replace(' ', '')
+            tweet = mongoDBQueries.find_by_id_raw(mongoDBCollection, tweet_id)
+            tweet_text = tweet['text']
+            user_name = tweet_text.split('user=')[1].split(' ')[0]
+            new_cell_value = cell_value.split('#in_replay_to')[0] + '#user=' + user_name +\
+                             ' #in_replay_to' + cell_value.split('#in_replay_to')[1]
+            worksheet_input.write(curr_row, 0, new_cell_value)
+
+        else:
+            for i in range(0, 6, 1):
+                cell_value = worksheet.cell_value(curr_row, i)
+                worksheet_input.write(curr_row, i, cell_value)
+    workbook_input.close()
+
+# add_user_information('../tokenisierung-tofix.xlsx', '../goldenStandard.xlsx')
 
 #
 # list_of_conversation = pure_annotation()
