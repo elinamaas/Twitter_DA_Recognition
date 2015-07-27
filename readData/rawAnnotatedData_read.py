@@ -17,44 +17,50 @@ from statistics import annotatedData_stat
 def import_annotated_docs(directory_path, collection_annotated_data):
     merged_ontologies = da_recognition.matching_schema.merge_ontologies()
     conversation_id = 0
+    save_conversation = False
     data = {}
     id = 1
     previous_tag = ''
     tag = ''
+    conversation_tweet_id_dict = dict()
     for directory_name in glob.iglob(os.path.join(directory_path,'*.*')):
         for filename in glob.iglob(os.path.join(directory_name, '*.tsv')):
             with open(filename) as f:
                 content = csv.reader(f, delimiter='\t')
                 previous_row = ' '
                 for row in content:
-                    if len(row) is 0:
-                        if conversation_id is not '1':
-                            data['id'] = id
-                            id += 1
+                    if continue_reading(row, previous_row):
+                        previous_row = row
+                        continue
+                    if len(row) is 0 and 'max_depth=' not in previous_row[1]:
+                        # import tweet in mongo
+                        if tweet_id not in conversation_tweet_id_dict:
                             importData.import_record(data, collection_annotated_data)
+                            conversation_tweet_id_dict[tweet_id] = conversation_id
+                            continue
                         else:
+                            data['conversation_id'] = conversation_tweet_id_dict[tweet_id]
+                            importData.import_record(data, collection_annotated_data)
                             continue
-                    else:
-                        if check_if_new_thread(row) is True:
-                            conversation_id = '1'
-                        if '#id' in row[0]:
-                            conversation_id = re.split('id=', row[0])[1]
-                            data = {}
-                            data['conversation_id'] =conversation_id
-                        elif check_if_consistent(row) is False:
-                            conversation_id = '1'
-                        elif conversation_id == '1':
-                            continue
-                        elif len(previous_row) is not 0 and '#id' in previous_row[0]:
-                            tweet_id = re.split('id=', row[0])[1]
-                            tweet_id = re.split(' user', tweet_id)[0]
-                            data['tweet_id'] = tweet_id
-                            data['text'] = row[0]
-                            text_id = re.split('#text=', row[0])[1]
-                            text_id = re.split('id=', text_id)[0]
-                            data['text_id'] = text_id
-                        elif conversation_id == re.split('-', row[0])[0]  \
-                                and re.split('-', row[0])[1] not in ['1', '2', '3'] and len(row) > 3:
+                    elif len(row) is 0:
+                        continue
+                    if '#text=New Thread size' in row[0]:
+                        conversation_id += 1
+                        data = {}
+
+                    elif '#id' in previous_row[0] and '#text=New Thread' not in row[0] and 'id=' in row[0]:
+                        print row
+                        tweet_id = re.split('id=', row[0])[1]
+                        tweet_id = re.split(' user', tweet_id)[0]
+                        data = {}
+                        data['conversation_id'] = conversation_id
+                        data['tweet_id'] = tweet_id
+                        data['text'] = row[0]
+                        text_id = re.split('#text=', row[0])[1]
+                        text_id = re.split('id=', text_id)[0]
+                        data['text_id'] = int(text_id)
+                    elif len(row) >= 3:
+                        if re.split('-', row[0])[1] not in ['1', '2', '3']:
                             token = row[1]
                             if '@' in token:
                                 if row[0].split('-')[1] == '4':
@@ -69,10 +75,26 @@ def import_annotated_docs(directory_path, collection_annotated_data):
 
                             tag_reduced, tag_minimal = set_reduced_minimal_tags(tag, merged_ontologies)
                             data[re.split('-', row[0])[1]] = [token, tag, tag_reduced, tag_minimal]
-                            previous_tag = tag
-                        elif len(row) < 3:
-                            conversation_id = 1
+                        previous_tag = tag
+                    # elif len(row) < 3:
+                    #     conversation_id = 1
                     previous_row = row
+
+
+def continue_reading(row, previous_row):
+    if len(row) == 1:
+        if '# webanno.custom.DialogActs' in row[0]:
+            # previous_row = row
+            return True
+        if '#id' in row[0] and '# webanno.custom.DialogActs' in previous_row[0]:
+            # previous_row = row
+            return True
+    elif len(row) > 1:
+        if row[1] == 'New' or 'size=' in row[1] or 'max_depth=' in row[1] or row[1] == 'Thread':
+            # previous_row = row
+            return True
+
+    return False
 
 
 def set_reduced_minimal_tags(da_full, merged_ontologies):
@@ -125,6 +147,7 @@ def splitting_tag(row, previous_tag):
         else:
             tag = row[2]
     return tag
+
 
 def check_if_new_thread(row):
     if 'webanno.custom.DialogActs' in row[0] or '#text=New Thread size=' in row[0]:
