@@ -97,7 +97,8 @@ def build_da_taxonomy_full():
     # da_taxonomy.show()
     #print da_taxonomy.depth()
     # print da_taxonomy.is_branch('DIT++ Taxonomy')
-    da_taxonomy.all_nodes()
+    # da_taxonomy.parent()
+    # da_taxonomy.all_nodes()
     return da_taxonomy
 
 

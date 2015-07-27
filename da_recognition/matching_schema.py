@@ -1,8 +1,8 @@
-from postgres.postgres_queries import find_all_records, da_full_table
+# from postgres.postgres_queries import find_all_records, da_full_table
 
 __author__ = 'snownettle'
 from da_recognition import dialogue_acts_taxonomy
-from postgres import postgres_queries
+from postgres import postgres_queries, postgres_configuration
 #we have three types of DIT++ schema. But the annotated data was only for
 
 
@@ -31,7 +31,7 @@ def match_min(da_name_full):
 
 
 def merge_ontologies():
-    results = postgres_queries.find_all_records(da_full_table)
+    results = postgres_queries.find_all_records(postgres_configuration.fullOntologyTable)
     merged_ontologies = dict()
     for record in results:
         da_full = record[1]

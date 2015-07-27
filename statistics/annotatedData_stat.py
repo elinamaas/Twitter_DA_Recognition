@@ -76,7 +76,7 @@ def students_tweets():# how much tweets were annotated by 1, 2 or 3 students
     for tweet_id, count in tweets_dict.iteritems():
         if count == 3:
             three_annotators.add(tweet_id)
-
+    # print len(three_annotators)
     return three_annotators#ids with 3 annotator
 
 
