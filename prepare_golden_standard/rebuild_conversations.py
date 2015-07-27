@@ -14,7 +14,7 @@ def build_conversation_tree(parent_tweet, converasation_raw, conversation_tree):
     i = 0
     while i < number_of_tweets:
         tweet = converasation_raw[i]
-        if tweet[1] == parent_tweet:
+        if tweet[2] == parent_tweet:
             conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
             build_conversation_tree(tweet[0], converasation_raw, conversation_tree)
         i += 1
@@ -25,7 +25,7 @@ def build_conversation_lang(parent_tweet, converasation_raw, conversation_tree):
     i = 0
     while i < number_of_tweets:
         tweet = converasation_raw[i]
-        if tweet[1] == parent_tweet and tweet[5] is True:
+        if tweet[2] == parent_tweet and tweet[6] is True:
             conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
             build_conversation_tree(tweet[0], converasation_raw, conversation_tree)
         i += 1
@@ -41,12 +41,12 @@ def conversation_regarding_language():
     test_i = 0
     for i in range(0, conversation_amount + 1, 1):
         conversation_tree = Tree()
-        converastion = postgres_queries.find_conversation(i)
-        test_i += len(converastion)
-        for tweet in converastion:
-            if tweet[1] is None and tweet[5] is True:
+        conversation = postgres_queries.find_conversation(i)
+        test_i += len(conversation)
+        for tweet in conversation:
+            if tweet[2] is None and tweet[6] is True:
                 conversation_tree.create_node(tweet[0], tweet[0])
-                build_conversation_lang(tweet[0], converastion, conversation_tree)
+                build_conversation_lang(tweet[0], conversation, conversation_tree)
                 depth = conversation_tree.depth() + 1
                 number_of_tweets = len(conversation_tree.all_nodes())
                 #short/long
@@ -69,7 +69,9 @@ def conversation_regarding_language():
                     depth_dict[depth] += 1
                 else:
                     depth_dict[depth] = 1
-        conversation_list.append(conversation_tree)
+        # check if conversation_tree is null- dont add
+        if len(conversation_tree.all_nodes())!=0:
+            conversation_list.append(conversation_tree)
     number = 0
     new_tweet_list_id = list()
     for con in conversation_list:
