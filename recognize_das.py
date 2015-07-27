@@ -1,13 +1,13 @@
 __author__ = 'snownettle'
 from postgres import insert_to_table, postgres_queries, postgres_configuration, update_table
 from readData import editedAnnotatedData
+from da_recognition import baseline
 from da_recognition import supervised_learning
-# from evaluation import da_evaluation
+from evaluation import da_evaluation
 # from mongoDB import mongoDB_configuration, queries
 # from prepare_golden_standard.annotated_tweets_final import editing_annotated_tweets
 # from prepare_golden_standard import insert_to_postgres
 #
-# from da_recognition import baseline
 
 # database = 'DARecognition'
 # #
@@ -55,7 +55,7 @@ from da_recognition import supervised_learning
 
 ###################### NEW ################################
 print 'start'
-if postgres_configuration.check_if_exists() is False:
+if postgres_configuration.check_if_exists_tweet_table() is False:
     # create db
     postgres_configuration.create_db()
     print 'Database is created'
@@ -68,10 +68,10 @@ if postgres_configuration.check_if_exists() is False:
 
     # insert golden standard to db
     print 'Start inserting golden standard'
-    editedAnnotatedData.import_golden_standard_postgres('tokenisierung-tofix.xlsx')
+    editedAnnotatedData.import_golden_standard_postgres('goldenStandard.xlsx')
     insert_to_table.make_segmentation_utterance_table()
     update_table.update_position_conversation_column()
-    print 'Golden standeard is inserted'
+    print 'Golden standard is inserted'
 else:
     print 'is everything there'
 
@@ -80,11 +80,11 @@ else:
 # baseline.assign_inform_da()
 #
 # print 'Baseline evaluation'
-#
+# #
 # da_evaluation.evaluation_taxonomy('full')
 # da_evaluation.evaluation_taxonomy('reduced')
 # da_evaluation.evaluation_taxonomy('min')
 
-print 'Depending on length'
+# print 'Depending on length'
 supervised_learning.hmm_utterance_length()
 

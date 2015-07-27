@@ -1,8 +1,5 @@
 __author__ = 'snownettle'
-import collections
 
-import nltk
-from nltk import WhitespaceTokenizer
 import postgres_configuration
 
 
@@ -311,38 +308,6 @@ def find_utterance_tweet(taxonomy, tweet_id):
     return results
 
 
-def lenght_feature_segments_utterance(training_set, taxonomy):
-    observations = set()
-    emissions = collections.defaultdict()
-    for conversation in training_set:
-        all_nodes = conversation.all_nodes()
-        for node in all_nodes:
-            tweet_id = node.tag
-            segments = find_utterance_tweet(taxonomy, tweet_id)
-            for segment in segments:
-                segment_len = len(nltk.word_tokenize(segment[0]))
-                if '@' in segment[0]:
-                    segment_len = len(WhitespaceTokenizer().tokenize(segment[0]))
-                observations.add(segment_len)
-                if segment[1] in emissions:
-                    da_utterance_len = emissions[segment[1]]
-                    if segment_len in da_utterance_len:
-                        da_utterance_len[segment_len] += 1
-                    else:
-                        da_utterance_len[segment_len] = 1
-                        # emissions[segment[1]] = {segment_len:1}
-                else:
-                    da_utterance_len = dict()
-                    da_utterance_len[segment_len] = 1
-                    emissions[segment[1]] = da_utterance_len
-    observations = list(observations)
-    s_count = count_start_conversation()
-    emissions['<S>'] = {0:s_count}
-    e_count = count_end_conversation()
-    emissions['<E>'] = {0:e_count}
-    return observations, emissions
-
-
 def count_end_conversation():
     connection, cursor = postgres_configuration.make_connection()
     query = 'select distinct tweet_id from tweet where position_in_conversation = \'end\''
@@ -359,5 +324,15 @@ def count_start_conversation():
     results = cursor.rowcount
     postgres_configuration.close_connection(connection)
     return results
+
+
+def find_username_by_tweet_id(tweet_id):
+    connection, cursor = postgres_configuration.make_connection()
+    query = 'select username from tweet where tweet_id = ' + str(tweet_id)
+    cursor.execute(query)
+    results = cursor.fetchall()
+    postgres_configuration.close_connection(connection)
+    return results[0][0]
+
 
 

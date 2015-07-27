@@ -1,7 +1,13 @@
+import numpy as np
+
 __author__ = 'snownettle'
+from nltk import WhitespaceTokenizer
+from postgres.postgres_queries import find_utterance_tweet, count_start_conversation, count_end_conversation
+
 from postgres import postgres_queries
 import collections
 import nltk
+import itertools
 
 
 def calculate_da_bigrams(): #overall
@@ -19,25 +25,11 @@ def calculate_da_bigrams(): #overall
                     bigrams[bigram] += 1
                 else:
                     bigrams[bigram] = 1
-        find_children(root[0], start_symbol, bigrams)
-
-    # for bigram, count in bigrams.iteritems():
-    #     print bigram + '\t ' + str(count)
+        find_children_bigrams(root[0], start_symbol, bigrams)
     return bigrams
 
 
-# def sort_segments(db_segments):
-#     segments_dict = dict()
-#     for segment in db_segments:
-#         offset = segment[0]
-#         da = segment[1]
-#         start_offset = int(offset.split(':')[0])
-#         segments_dict[start_offset] = da
-#     new_segments_dict = collections.OrderedDict(sorted(segments_dict.items()))
-#     return new_segments_dict
-
-
-def find_children(tweet_id, previous_da, bigrams ):
+def find_children_bigrams(tweet_id, previous_da, bigrams):
     children = postgres_queries.find_children(tweet_id)
     previous_tweet_da = previous_da
     if len(children) == 1:
@@ -55,17 +47,9 @@ def find_children(tweet_id, previous_da, bigrams ):
                 bigrams[previous_da] = {}
                 bigrams[previous_da][da] = 1
             previous_da = da
-            # # if da != '0':
-            # bigram = previous_da + ', ' + da
-            # # bigram_count += 1
-            # if bigram in bigrams:
-            #     bigrams[bigram] += 1
-            # else:
-            #     bigrams[bigram] = 1
-        find_children(tweet_id_child, previous_da, bigrams)
+        find_children_bigrams(tweet_id_child, previous_da, bigrams)
     elif len(children) > 1:
         for child in children:
-            # start_symbol = previous_tweet_da
             segments = postgres_queries.find_segments(int(child[0]))
             segments_da = sort_segments(segments, 'full')
             for start_offset, da in segments_da.iteritems():
@@ -79,15 +63,7 @@ def find_children(tweet_id, previous_da, bigrams ):
                     bigrams[previous_da] = {}
                     bigrams[previous_da][da] = 1
                 previous_da = da
-                # # if da != '0':
-                # bigram = start_symbol + ', ' + da
-                # # bigram_count += 1
-                # start_symbol = da
-                # if bigram in bigrams:
-                #     bigrams[bigram] += 1
-                # else:
-                #     bigrams[bigram] = 1
-            find_children(int(child[0]), previous_da, bigrams)
+            find_children_bigrams(int(child[0]), previous_da, bigrams)
     else:
         end_symbol = '<E>'
         if previous_da in bigrams:
@@ -99,11 +75,6 @@ def find_children(tweet_id, previous_da, bigrams ):
         else:
             bigrams[previous_da] = {}
             bigrams[previous_da][end_symbol] = 1
-        # bigram = previous_da + ', ' + end_symbol
-        # if bigram in bigrams:
-        #     bigrams[bigram] += 1
-        # else:
-        #     bigrams[bigram] = 1
 
 
 def calculate_da_unigrams_short_long(): #pro segment
@@ -157,7 +128,7 @@ def calculate_da_bigram_short_long():
                         bigrams_long[bigram] += 1
                     else:
                         bigrams_long[bigram] = 1
-            find_children(root[0], start_symbol, bigrams_long)
+            find_children_bigrams(root[0], start_symbol, bigrams_long)
         else:
             for start_offset, da in segments_da.iteritems():
                 if da != '0':
@@ -167,7 +138,7 @@ def calculate_da_bigram_short_long():
                         bigrams_short[bigram] += 1
                     else:
                         bigrams_short[bigram] = 1
-            find_children(root[0], start_symbol, bigrams_short)
+            find_children_bigrams(root[0], start_symbol, bigrams_short)
 
     print 'Bigram for short conversations:'
     for bigram, count in bigrams_short.iteritems():
@@ -225,6 +196,7 @@ def calculate_da_lang_model_bigrams(taxonomy):
     da_lang_model = collections.defaultdict()
     return da_lang_model
 
+
 def unigrams_training_set(training_set):
     number_start_symbol = len(training_set)
     unigrams = dict()
@@ -245,6 +217,7 @@ def unigrams_training_set(training_set):
                 else:
                     unigrams[segment[1]] = 1
     return unigrams
+
 
 def bigram_test_set(training_set):
     bigram_count = 0
@@ -268,9 +241,10 @@ def bigram_test_set(training_set):
                     bigram_dict[previous_da] = {}
                     bigram_dict[previous_da][da] = 1
                 previous_da = da
-            find_children(root, previous_da, bigram_dict)
+            find_children_bigrams(root, previous_da, bigram_dict)
     # bigram_count = sum(bigram_dict.values())
     return bigram_dict
+
 
 def sort_segments(segments, taxonomy):
     #place taxonomy
@@ -288,29 +262,117 @@ def sort_segments(segments, taxonomy):
     return sorted_segments
 
 
-def extract_length_feature(data_set):
-    utterance_length_conversations_list = list()
+def extract_features_test_set(data_set):
+    taxonomy = 'full' #it doesn_t matter which taxonomy, we make here predictions
+    features_list = list()
     for conversation in data_set:
-        utterance_length_in_one_conversation = list()
+        root_id = conversation.root
+        root_username = postgres_queries.find_username_by_tweet_id(root_id)
+        all_conversation_branches = conversation.paths_to_leaves()
+        for branch in all_conversation_branches:
+            feature_branch = list()
+            t = 0
+            for tweet_id in branch:
+                segments = postgres_queries.find_segments_utterance(tweet_id)
+                t += len(segments)
+                current_username = postgres_queries.find_username_by_tweet_id(tweet_id)
+                same_username = (root_username == current_username)
+                if same_username is True:
+                    same_username = 1
+                else:
+                    same_username = 0
+                segments = sort_segments(segments, taxonomy)
+                for offset, utterance in segments.iteritems():
+                    segment_len = len(nltk.word_tokenize(utterance))
+                    if '@' in utterance:
+                        segment_len = len(WhitespaceTokenizer().tokenize(utterance))
+                    feature_branch.append([segment_len, same_username])
+            features_list.append(feature_branch)
+    return features_list
+
+
+def extract_features(training_set, taxonomy, states): #check if in the training set is only german tweets
+    observations_length = set()
+    emissions_length = collections.defaultdict()
+    da_root_username_emissions = collections.defaultdict(dict)
+    observation_root_username = [0, 1] # root, not_root
+    for conversation in training_set:
         root = conversation.root
-        if root is not None:
-            segments = postgres_queries.find_segments_utterance(root)
-            sorted_segments = sort_segments(segments, 'full')
-            for segment, utterance in sorted_segments.iteritems():
-                length = len(nltk.word_tokenize(utterance))
-                utterance_length_in_one_conversation.append(length)
-        if len(utterance_length_in_one_conversation) != 0:
-            utterance_length_conversations_list.append(utterance_length_in_one_conversation)
-    return utterance_length_conversations_list
+        root_username = postgres_queries.find_username_by_tweet_id(root)
+        all_nodes = conversation.all_nodes()
+        for node in all_nodes:
+            tweet_id = node.tag
+            current_username = postgres_queries.find_username_by_tweet_id(tweet_id)
+            segments = find_utterance_tweet(taxonomy, tweet_id)
+            for segment in segments:
+                build_root_usersname_emissions(root_username, current_username, segment[1], da_root_username_emissions)
+                build_length_utterance_emissions(segment, observations_length, emissions_length)
+
+    observations_length = list(observations_length)
+    s_count = count_start_conversation()
+    emissions_length['<S>'] = {0:s_count}
+    e_count = count_end_conversation()
+    emissions_length['<E>'] = {0:e_count}
+    emissions_probability_length = calculate_emission_probability_feature(emissions_length, states, observations_length)
+    emissions_probability_root_username = calculate_emission_probability_feature(da_root_username_emissions,
+                                                                                 states, observation_root_username)
+    observation = [observations_length, observation_root_username]
+    emission = [emissions_probability_length, emissions_probability_root_username]
+    observation_product = itertools.product(observations_length, observation_root_username)
+    observation_product = list(observation_product)
+    return observation, emission, observation_product
 
 
-# calculate_da_lang_model_unigrams('full')
-# calculate_da_unigrams('full')
-# print 'Bigrams'
-# bigrams = calculate_da_bigrams()
-# unigrams = calculate_da_unigrams()
-# bigram_probability(bigrams, unigrams)
-# print 'Unigrams short and long'
-# calculate_da_unigrams_short_long()
-# print 'Bigrmas short and long'
-# calculate_da_bigram_short_long()
+def build_root_usersname_emissions(root_username, current_username, da, da_root_username_emissions):
+    """
+
+    :type da_root_username_emissions: collections.defaultdict(dict)
+    """
+    same_username = (root_username == current_username)
+    if same_username is True:
+        same_username = 1
+    else:
+        same_username = 0
+    if da in da_root_username_emissions:
+        if same_username in da_root_username_emissions[da]:
+            da_root_username_emissions[da][same_username] += 1
+        else:
+            da_root_username_emissions[da][same_username] = 1
+    else:
+        da_root_username_emissions[da][same_username] = 1
+
+
+def build_length_utterance_emissions(segment, observations_length, emissions_length):
+    segment_len = len(nltk.word_tokenize(segment[0]))
+    if '@' in segment[0]:
+        segment_len = len(WhitespaceTokenizer().tokenize(segment[0]))
+    observations_length.add(segment_len)
+    if segment[1] in emissions_length:
+        da_utterance_len = emissions_length[segment[1]]
+        if segment_len in da_utterance_len:
+            da_utterance_len[segment_len] += 1
+        else:
+            da_utterance_len[segment_len] = 1
+            # emissions[segment[1]] = {segment_len:1}
+    else:
+        da_utterance_len = dict()
+        da_utterance_len[segment_len] = 1
+        emissions_length[segment[1]] = da_utterance_len
+
+
+def calculate_emission_probability_feature(emissions, states, observations):
+    for i in range(0, len(states), 1):
+        occurancy = emissions[states[i]]
+        total_number = sum(occurancy.values())
+        probabilities = list()
+        for j in range(0, len(observations), 1):
+            if observations[j] in occurancy:
+                pr = occurancy[observations[j]]/float(total_number)
+                probabilities.append(pr)
+            else:
+                probabilities.append(0)
+        if i == 0:
+            emission_probability = np.array(probabilities)
+        else:
+            emission_probability = np.vstack((emission_probability, probabilities))
+    return emission_probability

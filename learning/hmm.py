@@ -2,10 +2,10 @@ from __future__ import division
 import numpy as np
 # from sklearn import hmm
 from analysing_GS import features
-from postgres import postgres_queries
-from da_recognition import dialogue_acts_taxonomy
+import analysing_GS.features
 import collections
 from hmmlearn.hmm import MultinomialHMM
+
 __author__ = 'snownettle'
 #hidden markov model
 
@@ -14,46 +14,47 @@ def calculate_hmm(training_set, test_set):
     taxonomy = 'full'
     unigrams = features.unigrams_training_set(training_set)
 
-    states = find_states(unigrams)
+    states = find_states(unigrams) # da labels
     n_states = len(states)
     start_probability = calculate_start_probability(unigrams, states)
     transition_probability = calculate_transition_probability(training_set, states)
-    observations, emissions = postgres_queries.lenght_feature_segments_utterance(training_set, taxonomy)
-    emission_probability = calculate_emission_probability(emissions, states, observations)
+
+    # observations_length, emissions_lenght = analysing_GS.features.extract_features(training_set, taxonomy)
+    # observations_root_username, emissions_username = features.extract_root_username(training_set, taxonomy)
+    #
+    # emission_probability_length = calculate_emission_probability_feature(emissions_lenght, states, observations_length)
+    # emission_probability_root_user_name = calculate_emission_probability_feature(emissions_username,
+    #                                                                              states, observations_root_username)
+    #
+    # emission_probability_sets = [emission_probability_length, emission_probability_root_user_name]
+    # observation_all = [observations_length, observations_root_username]
+    # observation_sets = itertools.product(observations_length, observations_root_username)
+    # observation_sets = list(observation_sets)
+
+    observations, emissions, observations_product = analysing_GS.features.extract_features(training_set, taxonomy, states)
+    emission_probability = calculate_emission_probability(states, observations_product,
+                                                          observations, emissions)
 
     model = MultinomialHMM(n_components=n_states)
     model._set_startprob(start_probability)
     model._set_transmat(transition_probability)
     model._set_emissionprob(emission_probability)
-    test_seq = features.extract_length_feature(test_set)
-    for dialog in test_seq:
+    test_seq = features.extract_features_test_set(test_set)
+    for path_observation in test_seq:
     # bob_says = [0, 2, 4, 6, 4, 7, 3, 2]
+        dialog = decode_test_observations(path_observation, observations_product)
         logprob, alice_hears = model.decode(dialog, algorithm="viterbi")
     # print "Bob says:", ", ".join(map(lambda x: str(observations[x]), bob_says))
         print "Alice hears:", ", ".join(map(lambda x: states[x], alice_hears))
 
-def calculate_emission_probability(emissions, states, observations):
-    for i in range(0, len(states), 1):
-        occurancy = emissions[states[i]]
-        total_number = sum(occurancy.values())
-        probabilities = list()
-        for j in range(0, len(observations), 1):
-            if observations[j] in occurancy:
-                pr = occurancy[observations[j]]/float(total_number)
-                probabilities.append(pr)
-            else:
-                probabilities.append(0)
-        if i == 0:
-            emission_probability = np.array(probabilities)
-        else:
-            emission_probability = np.vstack((emission_probability, probabilities))
 
-    # for da, len_freq in emissions.iteritems():
-    #     occurancy = sum(len_freq.values())
-    #     for len, freq in len_freq.iteritems():
-    #         freq = freq/float(occurancy)
-    #         emissions[da][len] = freq
-    return emission_probability
+def decode_test_observations(path_observation, observations_product):
+    decode_observations = list()
+    for observation in path_observation:
+        obs = tuple(observation)
+        index = observations_product.index(obs)
+        decode_observations.append(index)
+    return decode_observations
 
 # def calculate_observations(training_set):
 #     for conversation in training_set:
@@ -130,6 +131,25 @@ def calculate_transition_probability(training_set, states):
         else:
             tr_pr = np.vstack((tr_pr, np.array(transition_probabilitiese_list)))
     return tr_pr
+
+
+def calculate_emission_probability(states, observation_sets, observation_all, emission_probability_sets):
+    emission_probability = list()
+    for i in range(0, len(states)):
+        da = states[i]
+        emission_probability_row = list()
+        for observation_set in observation_sets:
+            prob = 1
+            j = 0
+            for observation in observation_set:
+                observation_index = observation_all[j].index(observation)
+                prob *= emission_probability_sets[j][i][observation_index]
+                j += 1
+            # print prob
+            emission_probability_row.append(prob)
+        emission_probability.append(emission_probability_row)
+    return emission_probability
+
 
 # states = ["Rainy", "Sunny"]
 # n_states = len(states)
