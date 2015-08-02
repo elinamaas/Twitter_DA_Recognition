@@ -248,16 +248,17 @@ def bigram_test_set(training_set):
 
 def sort_segments(segments, taxonomy):
     #place taxonomy
-    taxonomy = 'full'
+    # taxonomy = 'full'
     unsorted_segments = dict()
     for segment in segments:
         start_offset = int(segment[0].split(':')[0])
+        end_offset = int(segment[0].split(':')[1])
         if taxonomy == 'full':
-            unsorted_segments[start_offset] = segment[1]
+            unsorted_segments[start_offset] = (end_offset, segment[1])
         elif taxonomy == 'reduced':
-            unsorted_segments[start_offset] = segment[2]
+            unsorted_segments[start_offset] = (end_offset,segment[2])
         else:
-            unsorted_segments[start_offset] = segment[3]
+            unsorted_segments[start_offset] = (end_offset,segment[3])
     sorted_segments = collections.OrderedDict(sorted(unsorted_segments.items()))
     return sorted_segments
 
@@ -265,16 +266,18 @@ def sort_segments(segments, taxonomy):
 def extract_features_test_set(data_set):
     taxonomy = 'full' #it doesn_t matter which taxonomy, we make here predictions
     features_list = list()
+    conversation_path_tweet_id = list()
     for conversation in data_set:
         root_id = conversation.root
         root_username = postgres_queries.find_username_by_tweet_id(root_id)
         all_conversation_branches = conversation.paths_to_leaves()
+        # conversation_path_tweet_id.append(all_conversation_branches)
         for branch in all_conversation_branches:
             feature_branch = list()
-            t = 0
+            # t = 0
             for tweet_id in branch:
-                segments = postgres_queries.find_segments_utterance(tweet_id)
-                t += len(segments)
+                segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy)
+                # t += len(segments)
                 current_username = postgres_queries.find_username_by_tweet_id(tweet_id)
                 same_username = (root_username == current_username)
                 if same_username is True:
@@ -282,13 +285,19 @@ def extract_features_test_set(data_set):
                 else:
                     same_username = 0
                 segments = sort_segments(segments, taxonomy)
-                for offset, utterance in segments.iteritems():
-                    segment_len = len(nltk.word_tokenize(utterance))
-                    if '@' in utterance:
-                        segment_len = len(WhitespaceTokenizer().tokenize(utterance))
+                for start_offset, end_offset_utterance in segments.iteritems():
+                    end_offset = end_offset_utterance[0]
+                    conversation_path_tweet_id.append([tweet_id, str(str(start_offset) + ':' + str(end_offset))])
+                    segment_len = end_offset - start_offset + 1
+                    if segment_len > 24:
+                        print tweet_id
+                        print 'there'
+                    # segment_len = len(nltk.word_tokenize(utterance))
+                    # if '@' in utterance:
+                    #     segment_len = len(WhitespaceTokenizer().tokenize(utterance))
                     feature_branch.append([segment_len, same_username])
             features_list.append(feature_branch)
-    return features_list
+    return features_list, conversation_path_tweet_id
 
 
 def extract_features(training_set, taxonomy, states): #check if in the training set is only german tweets
@@ -303,9 +312,11 @@ def extract_features(training_set, taxonomy, states): #check if in the training 
         for node in all_nodes:
             tweet_id = node.tag
             current_username = postgres_queries.find_username_by_tweet_id(tweet_id)
-            segments = find_utterance_tweet(taxonomy, tweet_id)
+            # here!!!
+
+            segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy)
             for segment in segments:
-                build_root_usersname_emissions(root_username, current_username, segment[1], da_root_username_emissions)
+                build_root_usersname_emissions(root_username, current_username, segment, da_root_username_emissions)
                 build_length_utterance_emissions(segment, observations_length, emissions_length)
 
     observations_length = list(observations_length)
@@ -323,7 +334,7 @@ def extract_features(training_set, taxonomy, states): #check if in the training 
     return observation, emission, observation_product
 
 
-def build_root_usersname_emissions(root_username, current_username, da, da_root_username_emissions):
+def build_root_usersname_emissions(root_username, current_username, segment, da_root_username_emissions):
     """
 
     :type da_root_username_emissions: collections.defaultdict(dict)
@@ -333,6 +344,7 @@ def build_root_usersname_emissions(root_username, current_username, da, da_root_
         same_username = 1
     else:
         same_username = 0
+    da = segment[2]
     if da in da_root_username_emissions:
         if same_username in da_root_username_emissions[da]:
             da_root_username_emissions[da][same_username] += 1
@@ -343,12 +355,14 @@ def build_root_usersname_emissions(root_username, current_username, da, da_root_
 
 
 def build_length_utterance_emissions(segment, observations_length, emissions_length):
-    segment_len = len(nltk.word_tokenize(segment[0]))
-    if '@' in segment[0]:
-        segment_len = len(WhitespaceTokenizer().tokenize(segment[0]))
+    start_offset = int(segment[0].split(':')[0])
+    end_offset = int(segment[0].split(':')[1])
+    segment_len = end_offset - start_offset + 1
+    # if '@' in segment[0]:
+    #     segment_len = len(WhitespaceTokenizer().tokenize(segment[0]))
     observations_length.add(segment_len)
-    if segment[1] in emissions_length:
-        da_utterance_len = emissions_length[segment[1]]
+    if segment[2] in emissions_length:
+        da_utterance_len = emissions_length[segment[2]]
         if segment_len in da_utterance_len:
             da_utterance_len[segment_len] += 1
         else:
@@ -357,7 +371,7 @@ def build_length_utterance_emissions(segment, observations_length, emissions_len
     else:
         da_utterance_len = dict()
         da_utterance_len[segment_len] = 1
-        emissions_length[segment[1]] = da_utterance_len
+        emissions_length[segment[2]] = da_utterance_len
 
 
 def calculate_emission_probability_feature(emissions, states, observations):

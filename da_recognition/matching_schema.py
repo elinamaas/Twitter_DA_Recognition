@@ -1,4 +1,4 @@
-# from postgres.postgres_queries import find_all_records, da_full_table
+from postgres.postgres_queries import find_all_records, find_da_by_name
 
 __author__ = 'snownettle'
 from da_recognition import dialogue_acts_taxonomy
@@ -41,3 +41,16 @@ def merge_ontologies():
         merged_ontologies[da_full] = [da_reduced, da_minimal]
     return merged_ontologies
 
+
+def make_ontology_dict():
+    ontology_dict = dict()
+    da_full = find_all_records(postgres_configuration.fullOntologyTable)
+    for da in da_full:
+        da_full_name = da[1]
+        da_id_full = da[0]
+        da_reduced = match_reduced(da_id_full)
+        da_id_reduced = find_da_by_name(da_reduced, 'dialogue_act_reduced')
+        da_min = match_min(da_id_full)
+        da_id_min = find_da_by_name(da_min, 'dialogue_act_minimal')
+        ontology_dict[da_full_name] = [da_id_full, da_id_reduced, da_id_min]
+    return ontology_dict

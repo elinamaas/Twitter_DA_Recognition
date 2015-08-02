@@ -1,3 +1,5 @@
+import da_recognition.matching_schema
+
 __author__ = 'snownettle'
 
 import postgres_configuration
@@ -176,87 +178,6 @@ def insert_annotated_tweets_to_segment_table(tweets_list): # insert to segment t
     postgres_configuration.close_connection(connection)
 
 
-def insert_annotated_tweet(tweet):
-    connection, cursor = postgres_configuration.make_connection()
-    tweet_id = tweet.get_tweet_id()
-    tweet_text = tweet.get_tweet_text()
-    username = tweet.get_username()
-    if '\'' in tweet_text:
-        tweet_text = tweet_text.replace('\'', '\'\'')
-    in_replay_to = str(tweet.get_in_replay_to_id())
-    if in_replay_to == 'None ':
-        in_replay_to = 'NULL'
-    tokens = tweet.get_tokens()
-    conversation_id = tweet.get_conversation_id()
-    german = check_lang.check_german(tweet_text)
-    segments = tweet.get_segments()
-    query = 'INSERT INTO Tweet (Tweet_id, Username, In_replay_to, Conversation_id, Tweet_text, Annotated, German) ' \
-            'VALUES (%s, \'%s\', %s, %s , \'%s \', %s, %s)' \
-            % (tweet_id, username, in_replay_to, conversation_id, tweet_text, True, german)
-    cursor.execute(query)
-    connection.commit()
-    token_dict_list = list()
-
-    for offset, token_da in tokens.iteritems():
-        token = token_da[0]
-        if type(token) is unicode:
-            if '\'' in token:
-                token = token.replace('\'', '\'\'')
-        # query = 'select dialogue_act_id from dialogue_act where dialogue_act_name = \'' + token_da[1] + '\''
-        # cursor.execute(query)
-        # results = cursor.fetchall()
-
-        da_id_full = postgres_queries.find_da_by_name(token_da[1], 'dialogue_act_full')
-        # for result in results:
-        # da_id_full = result[0]
-        da_reduced = matching_schema.match_reduced(da_id_full)
-        da_id_reduced = postgres_queries.find_da_by_name(da_reduced, 'dialogue_act_reduced')
-        da_min = matching_schema.match_min(da_id_full)
-        da_id_min = postgres_queries.find_da_by_name(da_min, 'dialogue_act_minimal')
-        # da_id = da_id[0]
-        token_dict = {'tweet_id': tweet_id, 'offset': offset, 'token': token, 'da_id_full': da_id_full,
-                      'da_id_reduced': da_id_reduced, 'da_id_min': da_id_min}
-        token_dict_list.append(token_dict)
-        # query = 'insert into annotated_token_tweet (tweet_id, token_offset, token, dialogue_act_id_full, ' \
-        #         'dialogue_act_id_reduced, dialogue_act_id_min) ' \
-        #         'values (%s, %s, \'%s\', %s, %s, %s) ' % (tweet_id, offset, token, da_id_full, da_id_reduced, da_id_min)
-        # cursor.execute(query)
-        # connection.commit()
-
-    query = 'insert into annotated_token_tweet (tweet_id, token_offset, token, dialogue_act_id_full, ' \
-            'dialogue_act_id_reduced, dialogue_act_id_min) values (%(tweet_id)s, %(offset)s, %(token)s,' \
-            ' %(da_id_full)s, %(da_id_reduced)s, %(da_id_min)s) '
-    cursor.executemany(query, token_dict_list)
-    connection.commit()
-
-    segment_dict_list = list()
-    for segment, da in segments.iteritems():
-        # query = 'select dialogue_act_id from dialogue_act where dialogue_act_name = \'' + da + '\''
-        # cursor.execute(query)
-        # results = cursor.fetchall()
-        # results = postgres_queries.find_da_by_name(da)
-        # for result in results:
-        #     da_id_full = result[0]
-            # da_id = da_id[0]
-        da_id_full = postgres_queries.find_da_by_name(da, 'dialogue_act_full')
-        da_reduced = matching_schema.match_reduced(da_id_full)
-        da_id_reduced = postgres_queries.find_da_by_name(da_reduced, 'dialogue_act_reduced')
-        da_min = matching_schema.match_min(da_id_full)
-        da_id_min = postgres_queries.find_da_by_name(da_min, 'dialogue_act_minimal')
-        segment_dict = {'tweet_id':tweet_id, 'segmentation_offset': segment, 'da_id_full': da_id_full,
-                        'da_id_reduced': da_id_reduced, 'da_id_min': da_id_min}
-        segment_dict_list.append(segment_dict)
-        # query = 'insert into segmentation (tweet_id, segmentation_offsets, dialogue_act_id_full, ' \
-        #         'dialogue_act_id_reduced, dialogue_act_id_min ) values (%s, \'%s\', %s, %s, %s)' \
-        #         % (tweet_id, segment, da_id_full, da_id_reduced, da_id_min)
-    query = 'insert into segmentation (tweet_id, segmentation_offsets, dialogue_act_id_full, ' \
-            'dialogue_act_id_reduced, dialogue_act_id_min ) values (%(tweet_id)s, %(segmentation_offset)s, ' \
-            '%(da_id_full)s, %(da_id_reduced)s, %(da_id_min)s)'
-    cursor.executemany(query, segment_dict_list)
-    connection.commit()
-
-    postgres_configuration.close_connection(connection)
-
 def insert_into_segmantation_prediction_table(tweet_id, segments_offset, da_id_full, da_reduced, da_min):
     connection, cursor = postgres_configuration.make_connection()
     query = 'INSERT INTO Segmentation_Prediction (Tweet_id, Segmentation_offsets, dialogue_act_id_full, ' \
@@ -292,5 +213,75 @@ def make_segmentation_utterance_table():
     cursor.executemany(query, segments_utt_data)
     connection.commit()
     postgres_configuration.close_connection(connection)
+
+
+def multiple_tweets_insert(tweets_list):
+    connection, cursor = postgres_configuration.make_connection()
+    query_tuple = ()
+    for tweet in tweets_list:
+        tweet_id = tweet.get_tweet_id()
+        tweet_text = tweet.get_tweet_text()
+        username = tweet.get_username()
+        if '\'' in tweet_text:
+            tweet_text = tweet_text.replace('\'', '\'\'')
+        in_replay_to = str(tweet.get_in_replay_to_id())
+        if in_replay_to == 'None ':
+            in_replay_to = None
+        conversation_id = tweet.get_conversation_id()
+        german = check_lang.check_german(tweet_text)
+        tweet_tuple = (tweet_id, username, in_replay_to, conversation_id, tweet_text, True, german)
+        query_tuple = (tweet_tuple,) + query_tuple
+    query = 'INSERT INTO Tweet (Tweet_id, Username, In_replay_to, Conversation_id, Tweet_text, Annotated, German) ' \
+            'VALUES (%s, %s, %s, %s , %s , %s, %s)'
+    cursor.executemany(query, query_tuple)
+    connection.commit()
+    postgres_configuration.close_connection(connection)
+
+
+def insert_annotated_table(list_of_tweets, german_tweet_id):
+    connection, cursor = postgres_configuration.make_connection()
+    segment_dict_list = list()
+    token_dict_list = list()
+    ontology_dict = matching_schema.make_ontology_dict()
+    for tweet in list_of_tweets:
+        tweet_id = int(tweet.get_tweet_id())
+        if tweet_id in german_tweet_id:
+            tokens = tweet.get_tokens()
+            segments = tweet.get_segments()
+            for offset, token_da in tokens.iteritems():
+                token = token_da[0]
+                if type(token) is unicode:
+                    if '\'' in token:
+                        token = token.replace('\'', '\'\'')
+                da_id_ontologies = ontology_dict[token_da[1]]
+                da_id_full = da_id_ontologies[0]
+                da_id_reduced = da_id_ontologies[1]
+                da_id_min = da_id_ontologies[2]
+                token_dict = {'tweet_id': tweet_id, 'offset': offset, 'token': token, 'da_id_full': da_id_full,
+                              'da_id_reduced': da_id_reduced, 'da_id_min': da_id_min}
+                token_dict_list.append(token_dict)
+
+            for segment, da in segments.iteritems():
+                da_id_ontologies = ontology_dict[da]
+                da_id_full = da_id_ontologies[0]
+                da_id_reduced = da_id_ontologies[1]
+                da_id_min = da_id_ontologies[2]
+                segment_dict = {'tweet_id':tweet_id, 'segmentation_offset': segment, 'da_id_full': da_id_full,
+                                'da_id_reduced': da_id_reduced, 'da_id_min': da_id_min}
+                segment_dict_list.append(segment_dict)
+
+    query_segmantation = 'insert into segmentation (tweet_id, segmentation_offsets, dialogue_act_id_full, ' \
+                          'dialogue_act_id_reduced, dialogue_act_id_min ) values (%(tweet_id)s, %(segmentation_offset)s, ' \
+                          '%(da_id_full)s, %(da_id_reduced)s, %(da_id_min)s)'
+    cursor.executemany(query_segmantation, segment_dict_list)
+    connection.commit()
+
+    query_tokes = 'insert into annotated_token_tweet (tweet_id, token_offset, token, dialogue_act_id_full, ' \
+                  'dialogue_act_id_reduced, dialogue_act_id_min) values (%(tweet_id)s, %(offset)s, %(token)s,' \
+                  ' %(da_id_full)s, %(da_id_reduced)s, %(da_id_min)s) '
+    cursor.executemany(query_tokes, token_dict_list)
+    connection.commit()
+    postgres_configuration.close_connection(connection)
+
 
 

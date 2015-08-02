@@ -1,6 +1,7 @@
 __author__ = 'snownettle'
 from postgres import insert_to_table, postgres_queries, postgres_configuration, update_table
 from readData import editedAnnotatedData
+from prepare_golden_standard import rebuild_conversations
 from da_recognition import baseline
 from da_recognition import supervised_learning
 from evaluation import da_evaluation
@@ -68,12 +69,26 @@ if postgres_configuration.check_if_exists_tweet_table() is False:
 
     # insert golden standard to db
     print 'Start inserting golden standard'
-    editedAnnotatedData.import_golden_standard_postgres('goldenStandard.xlsx')
+    list_of_tweets = editedAnnotatedData.import_golden_standard_postgres('goldenStandard.xlsx')
+    #update language info
+    print 'Update language information'
+    postgres_queries.update_lang_info('postgres/update_lang_info.sql')
+    # check language, delete non german tweets and their children
+    print 'Delete non-german tweets and their children'
+    german_tweet_id = rebuild_conversations.delete_non_german_tweets()
+    print 'Insert to annotated token table and segmentation table'
+    insert_to_table.insert_annotated_table(list_of_tweets, german_tweet_id)
+    print 'Insert to segmentation utterance table'
     insert_to_table.make_segmentation_utterance_table()
+    print 'Update tweet position in conversation'
     update_table.update_position_conversation_column()
     print 'Golden standard is inserted'
+
 else:
-    print 'is everything there'
+    print 'Golden standard is already there'
+
+
+
 
 # predictions
 # print 'Baseline'
@@ -81,10 +96,10 @@ else:
 #
 # print 'Baseline evaluation'
 # #
-# da_evaluation.evaluation_taxonomy('full')
 # da_evaluation.evaluation_taxonomy('reduced')
 # da_evaluation.evaluation_taxonomy('min')
 
 # print 'Depending on length'
-supervised_learning.hmm_utterance_length()
+# supervised_learning.hmm_utterance_length()
+# da_evaluation.evaluation_taxonomy('full')
 

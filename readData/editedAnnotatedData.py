@@ -6,6 +6,7 @@ from postgres import insert_to_table
 import xlrd
 
 def import_golden_standard_postgres(filename):
+    list_of_tweets_to_be_inserted = list()
     tweets_id = set()
     workbook = xlrd.open_workbook(filename)
     worksheet = workbook.sheet_by_name('Sheet1')
@@ -29,13 +30,15 @@ def import_golden_standard_postgres(filename):
             tweet.set_segments()
             if tweet_id not in tweets_id:
                 tweets_id.add(tweet_id)
-                insert_to_table.insert_annotated_tweet(tweet)
+                # insert_to_table.insert_annotated_tweet(tweet)
+                list_of_tweets_to_be_inserted.append(tweet)
         else:
             offset = worksheet.cell_value(curr_row, 0)
             token = worksheet.cell_value(curr_row, 1)
             da = worksheet.cell_value(curr_row, 2)
             tweet.set_tokens(offset, token, da)
-
+    insert_to_table.multiple_tweets_insert(list_of_tweets_to_be_inserted)
+    return list_of_tweets_to_be_inserted
 # import_golden_standard_postgres('../tokenisierung-tofix.xlsx')
 # test = 'jfjudj\''
 # print test

@@ -20,14 +20,17 @@ def build_conversation_tree(parent_tweet, converasation_raw, conversation_tree):
         i += 1
 
 
-def build_conversation_lang(parent_tweet, converasation_raw, conversation_tree):
+def build_conversation_lang(parent_tweet, converasation_raw, conversation_tree, tweets_in_conversation):
     number_of_tweets = len(converasation_raw)
     i = 0
     while i < number_of_tweets:
         tweet = converasation_raw[i]
+        # if tweet[6] is False:
+        #     print 'here'
         if tweet[2] == parent_tweet and tweet[6] is True:
+            tweets_in_conversation.append(tweet[0])
             conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
-            build_conversation_tree(tweet[0], converasation_raw, conversation_tree)
+            build_conversation_lang(tweet[0], converasation_raw, conversation_tree, tweets_in_conversation)
         i += 1
 
 #rebuilf conversation, take in account german tweets,with width and depth
@@ -72,13 +75,13 @@ def conversation_regarding_language():
         # check if conversation_tree is null- dont add
         if len(conversation_tree.all_nodes())!=0:
             conversation_list.append(conversation_tree)
-    number = 0
+    # number = 0
     new_tweet_list_id = list()
     for con in conversation_list:
         nodes = con.all_nodes()
         for node in nodes:
-            new_tweet_list_id.append(node.tag)
-        number += len(con.all_nodes())
+            new_tweet_list_id.append(int(node.tag))
+        # number += len(con.all_nodes())
     # print len(new_tweet_list_id)
     # for tweet_id in new_tweet_list_id:
     #     print tweet_id
@@ -119,5 +122,31 @@ def build_conversation_from_mongo(collection_name):
         conversation_list.append(conversation_tree)
     return conversation_list
 
+
+def delete_non_german_tweets():
+    tweets_in_conversation, conversation_list = build_german_conversation()
+    tweets = postgres_queries.find_all_tweets()
+    delete_list = list()
+    for tweet in tweets:
+        if int(tweet[0]) not in tweets_in_conversation:
+            delete_list.append(int(tweet[0]))
+    postgres_queries.delete_non_german_tweets(delete_list)
+    return tweets_in_conversation
+
+
+def build_german_conversation():
+    conversation_amount = postgres_queries.find_annotated_conversation_number()
+    conversation_list = list()
+    tweets_in_conversation = list()
+    for i in range(0, conversation_amount + 1, 1):
+        conversation_tree = Tree()
+        conversation = postgres_queries.find_conversation(i)
+        # test_i += len(conversation)
+        for tweet in conversation:
+            if tweet[2] is None and tweet[6] is True:
+                tweets_in_conversation.append(int(tweet[0]))
+                conversation_tree.create_node(tweet[0], tweet[0])
+                build_conversation_lang(tweet[0], conversation, conversation_tree, tweets_in_conversation)
+    return tweets_in_conversation, conversation_list
 
 # conversation_regarding_language()
