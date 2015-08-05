@@ -33,9 +33,9 @@ def create_db():
                     "In_replay_to BIGINT, Conversation_id BIGINT, Tweet_text VARCHAR(1024), "
                     "Annotated BOOLEAN, German Boolean, position_in_conversation e_position )")
 
-        cur.execute("CREATE TABLE IF NOT EXISTS EditTweet(Tweet_id BIGINT PRIMARY KEY, "
-                    "In_replay_to BIGINT, Conversation_id BIGINT, Tweet_text VARCHAR(1024), "
-                    "Annotated BOOLEAN, German Boolean, position_in_conversation e_position )")
+        # cur.execute("CREATE TABLE IF NOT EXISTS EditTweet(Tweet_id BIGINT PRIMARY KEY, "
+        #             "In_replay_to BIGINT, Conversation_id BIGINT, Tweet_text VARCHAR(1024), "
+        #             "Annotated BOOLEAN, German Boolean, position_in_conversation e_position )")
 
         cur.execute('CREATE TABLE IF NOT EXISTS Dialogue_act_full (Dialogue_act_id INTEGER PRIMARY KEY, '
                     'Dialogue_act_name VARCHAR(100), Parent_act_id INTEGER, '
@@ -60,27 +60,27 @@ def create_db():
                     'FOREIGN KEY(Dialogue_act_id_min) REFERENCES Dialogue_act_minimal (Dialogue_act_id))')
 
         cur.execute('CREATE TABLE IF NOT EXISTS Segmentation(Tweet_id BIGINT, '
-                    'Segmentation_offsets VARCHAR(10), Dialogue_act_id_full INTEGER, '
+                    'start_offset INTEGER, end_offset INTEGER, Dialogue_act_id_full INTEGER, '
                     'Dialogue_act_id_reduced INTEGER, Dialogue_act_id_min INTEGER, '
-                    'PRIMARY KEY (Tweet_id, Segmentation_offsets) , '
+                    'PRIMARY KEY (Tweet_id, start_offset, end_offset) , '
                     'FOREIGN KEY(Tweet_id) REFERENCES Tweet (Tweet_id), '
                     'FOREIGN KEY(Dialogue_act_id_full) REFERENCES  Dialogue_act_full(Dialogue_act_id), '
                     'FOREIGN KEY(Dialogue_act_id_reduced) REFERENCES Dialogue_act_reduced (Dialogue_act_id), '
                     'FOREIGN KEY(Dialogue_act_id_min) REFERENCES Dialogue_act_minimal (Dialogue_act_id))')
 
         cur.execute('CREATE TABLE IF NOT EXISTS Segmentation_Prediction(Tweet_id BIGINT, '
-                    'Segmentation_offsets VARCHAR(10), Dialogue_act_id_full INTEGER, '
+                    'start_offset INTEGER, end_offset INTEGER, Dialogue_act_id_full INTEGER, '
                     'Dialogue_act_id_reduced INTEGER, Dialogue_act_id_min INTEGER, '
-                    'PRIMARY KEY (Tweet_id, Segmentation_offsets) , '
+                    'PRIMARY KEY (Tweet_id, start_offset, end_offset) , '
                     'FOREIGN KEY(Tweet_id) REFERENCES Tweet (Tweet_id), '
                     'FOREIGN KEY(Dialogue_act_id_full) REFERENCES  Dialogue_act_full(Dialogue_act_id), '
                     'FOREIGN KEY(Dialogue_act_id_reduced) REFERENCES Dialogue_act_reduced (Dialogue_act_id), '
                     'FOREIGN KEY(Dialogue_act_id_min) REFERENCES Dialogue_act_minimal (Dialogue_act_id))')
 
-        cur.execute('create table if not exists Segments_utterance (Tweet_id bigint, Segmentation_offsets VARCHAR(10),'
-                    'Utterance Varchar(1024), Dialogue_act_id_full INTEGER, '
+        cur.execute('create table if not exists Segments_utterance (Tweet_id bigint, start_offset INTEGER, '
+                    'end_offset INTEGER, Utterance Varchar(1024), Dialogue_act_id_full INTEGER, '
                     'Dialogue_act_id_reduced INTEGER, Dialogue_act_id_min INTEGER,'
-                    'primary key (Tweet_id, Segmentation_offsets), '
+                    'primary key (Tweet_id, start_offset, end_offset), '
                     'foreign key (tweet_id) references tweet(tweet_id),'
                     'FOREIGN KEY(Dialogue_act_id_full) REFERENCES Dialogue_act_full (Dialogue_act_id), '
                     'FOREIGN KEY(Dialogue_act_id_reduced) REFERENCES Dialogue_act_reduced (Dialogue_act_id), '

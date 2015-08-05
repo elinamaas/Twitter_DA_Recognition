@@ -103,10 +103,10 @@ print 'Supervised learning: HMM'
 print 'Full Taxonomy'
 supervised_learning.hmm_utterance_length('full')
 da_evaluation.evaluation_taxonomy('full')
-print 'Reduced taxonomy'
-supervised_learning.hmm_utterance_length('reduced')
-da_evaluation.evaluation_taxonomy('reduced')
-print 'Minimal Taxonomy'
-supervised_learning.hmm_utterance_length('minimal')
-da_evaluation.evaluation_taxonomy('minimal')
+# print 'Reduced taxonomy'
+# supervised_learning.hmm_utterance_length('reduced')
+# da_evaluation.evaluation_taxonomy('reduced')
+# print 'Minimal Taxonomy'
+# supervised_learning.hmm_utterance_length('minimal')
+# da_evaluation.evaluation_taxonomy('minimal')
 

@@ -17,7 +17,7 @@ def calculate_hmm(training_set, test_set, taxonomy):
     states = find_states(unigrams) # da labels
     n_states = len(states)
     start_probability = calculate_start_probability(unigrams, states)
-    transition_probability = calculate_transition_probability(training_set, states)
+    transition_probability = calculate_transition_probability(training_set, states, taxonomy)
 
     observations, emissions, observations_product = analysing_GS.features.extract_features(training_set, taxonomy, states)
     emission_probability = calculate_emission_probability(states, observations_product,
@@ -39,7 +39,7 @@ def calculate_hmm(training_set, test_set, taxonomy):
             dialog_act_name = states[dialog_act_id]
             segment = branches[i][j]
             tweet_id = str(segment[0])
-            postgres_queries.update_da_prediction(dialog_act_name, tweet_id, segment[1], taxonomy)
+            postgres_queries.update_da_prediction(dialog_act_name, tweet_id, segment[1], segment[2], taxonomy)
             # i += 1
         #print "Alice hears:", ", ".join(map(lambda x: states[x], alice_hears))
     # print "Bob says:", ", ".join(map(lambda x: str(observations[x]), bob_says))
@@ -76,8 +76,8 @@ def calculate_start_probability(unigrams,states):
     start_pobability = np.array(start_pobability_list)
     return start_pobability
 
-def calculate_transition_probability(training_set, states):
-    bigrams = features.bigram_test_set(training_set)
+def calculate_transition_probability(training_set, states, taxonomy):
+    bigrams = features.bigram_test_set(training_set, taxonomy)
     transitions = collections.defaultdict(list)
     # checking = 0
     for start_da, end_da_count in bigrams.iteritems():
