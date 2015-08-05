@@ -197,7 +197,7 @@ def calculate_da_lang_model_bigrams(taxonomy):
     return da_lang_model
 
 
-def unigrams_training_set(training_set):
+def unigrams_training_set(training_set, taxonomy):
     number_start_symbol = len(training_set)
     unigrams = dict()
     unigrams['<S>'] = number_start_symbol
@@ -212,10 +212,22 @@ def unigrams_training_set(training_set):
             # which taxonomy?
             #full taxonomy
             for segment in segments:
-                if segment[1] in unigrams:
-                    unigrams[segment[1]] += 1
+                if taxonomy == 'full':
+                    if segment[1] in unigrams:
+                        unigrams[segment[1]] += 1
+                    else:
+                        unigrams[segment[1]] = 1
+                elif taxonomy=='reduced':
+                    if segment[2] in unigrams:
+                        unigrams[segment[2]] += 1
+                    else:
+                        unigrams[segment[2]] = 1
                 else:
-                    unigrams[segment[1]] = 1
+                    if segment[3] in unigrams:
+                        unigrams[segment[3]] += 1
+                    else:
+                        unigrams[segment[3]] = 1
+
     return unigrams
 
 
@@ -266,13 +278,14 @@ def sort_segments(segments, taxonomy):
 def extract_features_test_set(data_set):
     taxonomy = 'full' #it doesn_t matter which taxonomy, we make here predictions
     features_list = list()
-    conversation_path_tweet_id = list()
+    conversation_pathes_tweet_id = list()
     for conversation in data_set:
         root_id = conversation.root
         root_username = postgres_queries.find_username_by_tweet_id(root_id)
         all_conversation_branches = conversation.paths_to_leaves()
         # conversation_path_tweet_id.append(all_conversation_branches)
         for branch in all_conversation_branches:
+            conversation_path_tweet_id = list()
             feature_branch = list()
             # t = 0
             for tweet_id in branch:
@@ -297,7 +310,8 @@ def extract_features_test_set(data_set):
                     #     segment_len = len(WhitespaceTokenizer().tokenize(utterance))
                     feature_branch.append([segment_len, same_username])
             features_list.append(feature_branch)
-    return features_list, conversation_path_tweet_id
+            conversation_pathes_tweet_id.append(conversation_path_tweet_id)
+    return features_list, conversation_pathes_tweet_id
 
 
 def extract_features(training_set, taxonomy, states): #check if in the training set is only german tweets

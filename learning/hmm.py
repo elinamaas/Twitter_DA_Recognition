@@ -5,31 +5,19 @@ from analysing_GS import features
 import analysing_GS.features
 import collections
 from hmmlearn.hmm import MultinomialHMM
-
+from postgres import postgres_queries
 __author__ = 'snownettle'
 #hidden markov model
 
-def calculate_hmm(training_set, test_set):
+def calculate_hmm(training_set, test_set, taxonomy):
     # unigrams = features.calculate_da_unigrams('full')
-    taxonomy = 'full'
-    unigrams = features.unigrams_training_set(training_set)
+    # taxonomy = 'full'
+    unigrams = features.unigrams_training_set(training_set, taxonomy)
 
     states = find_states(unigrams) # da labels
     n_states = len(states)
     start_probability = calculate_start_probability(unigrams, states)
     transition_probability = calculate_transition_probability(training_set, states)
-
-    # observations_length, emissions_lenght = analysing_GS.features.extract_features(training_set, taxonomy)
-    # observations_root_username, emissions_username = features.extract_root_username(training_set, taxonomy)
-    #
-    # emission_probability_length = calculate_emission_probability_feature(emissions_lenght, states, observations_length)
-    # emission_probability_root_user_name = calculate_emission_probability_feature(emissions_username,
-    #                                                                              states, observations_root_username)
-    #
-    # emission_probability_sets = [emission_probability_length, emission_probability_root_user_name]
-    # observation_all = [observations_length, observations_root_username]
-    # observation_sets = itertools.product(observations_length, observations_root_username)
-    # observation_sets = list(observation_sets)
 
     observations, emissions, observations_product = analysing_GS.features.extract_features(training_set, taxonomy, states)
     emission_probability = calculate_emission_probability(states, observations_product,
@@ -39,31 +27,32 @@ def calculate_hmm(training_set, test_set):
     model._set_startprob(start_probability)
     model._set_transmat(transition_probability)
     model._set_emissionprob(emission_probability)
-    test_seq = features.extract_features_test_set(test_set)
-    for path_observation in test_seq:
-    # bob_says = [0, 2, 4, 6, 4, 7, 3, 2]
+    test_seq, branches = features.extract_features_test_set(test_set)
+    for i in range(0, len(test_seq), 1):
+        path_observation = test_seq[i]
         dialog = decode_test_observations(path_observation, observations_product)
         logprob, alice_hears = model.decode(dialog, algorithm="viterbi")
+        # i = 0
+        for j in range(0, len(alice_hears), 1):
+            dialog_act_id = alice_hears[j]
+        # for dialog_act_id in alice_hears:
+            dialog_act_name = states[dialog_act_id]
+            segment = branches[i][j]
+            tweet_id = str(segment[0])
+            postgres_queries.update_da_prediction(dialog_act_name, tweet_id, segment[1], taxonomy)
+            # i += 1
+        #print "Alice hears:", ", ".join(map(lambda x: states[x], alice_hears))
     # print "Bob says:", ", ".join(map(lambda x: str(observations[x]), bob_says))
-        print "Alice hears:", ", ".join(map(lambda x: states[x], alice_hears))
 
 
 def decode_test_observations(path_observation, observations_product):
+    #check if smth doenst exixst!
     decode_observations = list()
     for observation in path_observation:
         obs = tuple(observation)
         index = observations_product.index(obs)
         decode_observations.append(index)
     return decode_observations
-
-# def calculate_observations(training_set):
-#     for conversation in training_set:
-#         all_nodes = conversation.all_nodes()
-#         for node in all_nodes:
-#             tweet_id = node.tag
-#             segment_utterance = find_segments(tweet_id)
-#             segment_count += len(segments)
-
 
 
 def find_states(unigrams):
@@ -98,16 +87,6 @@ def calculate_transition_probability(training_set, states):
             if start_da not in transitions:
                 transitions[start_da] = {}
             transitions[start_da][end_da] = probablity
-        # checking += probablity
-        # start_da = start_da.split(',')[0].replace(' ', '')
-        # end_da = start_da.split(',')[1].replace(' ', '')
-    ######
-    ######  End symbol to what status?????
-    ######
-    # transitions['<E>'] = {}
-    # print 'ch: ', checking
-    # the problem is here
-    # there is no <E>
     for i in range(0, len(states), 1):
         start_state = states[i]
         transition_probabilities_dict = transitions[start_state]
@@ -123,9 +102,6 @@ def calculate_transition_probability(training_set, states):
                     transition_probabilitiese_list.append(transition_probabilities_dict[end_state])
                 else:
                     transition_probabilitiese_list.append(0)
-        # h = np.array(transition_probabilitiese_list)
-        # print i
-        # print sum(transition_probabilitiese_list)
         if i == 0:
             tr_pr = np.array(transition_probabilitiese_list)
         else:

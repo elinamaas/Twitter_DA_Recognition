@@ -251,7 +251,7 @@ def update_da_prediction(da_name, tweet_id, offset, taxonomy):
         query = 'update segmentation_prediction set dialogue_act_id_full = ' + str(da_id) + \
                 ' where tweet_id = ' + tweet_id + ' and segmentation_offsets = \' ' + offset + ' \''
     elif taxonomy == 'reduced':
-        da_id = find_da_by_name(da_name, postgres_configuration.fullOntologyTable)
+        da_id = find_da_by_name(da_name, postgres_configuration.reducedOntologyTable)
         query = 'update segmentation_prediction set dialogue_act_id_reduced = ' + str(da_id) + \
                 ' where tweet_id = ' + tweet_id + ' and segmentation_offsets = \' ' + offset + ' \''
     else:

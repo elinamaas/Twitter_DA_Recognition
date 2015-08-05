@@ -149,4 +149,21 @@ def build_german_conversation():
                 build_conversation_lang(tweet[0], conversation, conversation_tree, tweets_in_conversation)
     return tweets_in_conversation, conversation_list
 
-# conversation_regarding_language()
+
+def build_conversation():
+    conversation_roots = postgres_queries.find_conversations_root()
+    conversation_list = list()
+    for root in conversation_roots:
+        conversation_tree = Tree()
+        conversation_tree.create_node(root[0], root[0])
+        search_children(root[0], conversation_tree)
+        conversation_list.append(conversation_tree)
+    return conversation_list
+
+
+def search_children(tweet_id, conversation_tree):
+    children = postgres_queries.find_children(tweet_id)
+    for child in children:
+        conversation_tree.create_node(child[0], child[0], parent=tweet_id)
+        search_children(child[0], conversation_tree)
+

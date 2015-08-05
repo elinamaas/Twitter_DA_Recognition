@@ -4,7 +4,7 @@ from prepare_golden_standard import rebuild_conversations
 
 def fold_splitter():
     # Break data set into 10 pieces: n/10, where n ist the number of conversations
-    conversation_list = rebuild_conversations.conversation_list_regarding_language()
+    conversation_list = rebuild_conversations.build_conversation()
     conversation_number = len(conversation_list)
     datesets = dict() # dateset of 10 folders
     for i in range(0, 10, 1):
