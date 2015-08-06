@@ -302,18 +302,25 @@ def extract_features_test_set(data_set, cursor):
                 # t += len(segments)
                 current_username = postgres_queries.find_username_by_tweet_id(tweet_id, cursor)
                 same_username = (root_username == current_username)
+                # segment_position_first = 0
                 if same_username is True:
                     same_username = 1
                 else:
                     same_username = 0
                 # segments = sort_segments(segments, taxonomy)
-                for segment in segments:
+                # for segment in segments:
+                for i in range(0, len(segments), 1):
+                    segment = segments[i]
+                    if i == 0:
+                        segment_position_first = 1
+                    else:
+                        segment_position_first = 0
                 # for start_offset, end_offset_utterance in segments.iteritems():
                     start_offset = segment[0]
                     end_offset = segment[1]
                     conversation_path_tweet_id.append([tweet_id, start_offset, end_offset])
                     segment_len = end_offset - start_offset + 1
-                    feature_branch.append([segment_len, same_username])
+                    feature_branch.append([segment_len, same_username, segment_position_first])
             features_list.append(feature_branch)
             conversation_pathes_tweet_id.append(conversation_path_tweet_id)
     return features_list, conversation_pathes_tweet_id
@@ -323,7 +330,9 @@ def extract_features(training_set, taxonomy, states, cursor): #check if in the t
     observations_length = set()
     emissions_length = collections.defaultdict()
     da_root_username_emissions = collections.defaultdict(dict)
+    segment_position_first_emissions = collections.defaultdict(dict)
     observation_root_username = [0, 1] # root, not_root
+    observation_segment_position = [0, 1] # first segment, not first segment
     for conversation in training_set:
         root = conversation.root
         root_username = postgres_queries.find_username_by_tweet_id(root, cursor)
@@ -332,31 +341,33 @@ def extract_features(training_set, taxonomy, states, cursor): #check if in the t
             tweet_id = node.tag
             current_username = postgres_queries.find_username_by_tweet_id(tweet_id, cursor)
             # here!!!
-
+            segment_position_first = 0 # aka False
             segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy, cursor)
             for i in range(0, len(segments),1):
                 segment = segments[i]
-            # for segment in segments:
+                if i == 0:
+                    segment_position_first = 1 # aka true
+                else:
+                    segment_position_first = 0
                 build_root_usersname_emissions(root_username, current_username, segment, da_root_username_emissions)
                 build_length_utterance_emissions(segment, observations_length, emissions_length)
+                build_segment_position_emissions(segment_position_first, segment, segment_position_first_emissions)
 
     observations_length = list(observations_length)
     s_count = count_start_conversation(cursor)
-    emissions_length['<S>'] = {0:s_count}
+    emissions_length['<S>'] = {0: s_count}
     e_count = count_end_conversation(cursor)
-    emissions_length['<E>'] = {0:e_count}
+    emissions_length['<E>'] = {0: e_count}
     emissions_probability_length = calculate_emission_probability_feature(emissions_length, states, observations_length)
     emissions_probability_root_username = calculate_emission_probability_feature(da_root_username_emissions,
                                                                                  states, observation_root_username)
-    observation = [observations_length, observation_root_username]
-    emission = [emissions_probability_length, emissions_probability_root_username]
-    observation_product = itertools.product(observations_length, observation_root_username)
+    emissions_probability_segment_position = calculate_emission_probability_feature(segment_position_first_emissions,
+                                                                                    states, observation_segment_position)
+    observation = [observations_length, observation_root_username, observation_segment_position]
+    emission = [emissions_probability_length, emissions_probability_root_username, emissions_probability_segment_position]
+    observation_product = itertools.product(observations_length, observation_root_username, observation_segment_position)
     observation_product = list(observation_product)
     return observation, emission, observation_product
-
-
-# def build_segment_position_emissions(segment_position, segment, segment_position_emissions):
-#     if
 
 
 def build_root_usersname_emissions(root_username, current_username, segment, da_root_username_emissions):
@@ -426,3 +437,15 @@ def fetch_da_taxonomy(segment, taxonomy):
     else:
         da = segment[4]
     return da
+
+
+def build_segment_position_emissions(segment_position_first, segment, segment_position_first_emissions):
+    da = segment[3]
+    if da in segment_position_first_emissions:
+        segment_position_counter = segment_position_first_emissions[da]
+        if segment_position_first in segment_position_counter:
+            segment_position_counter[segment_position_first] += 1
+        else:
+            segment_position_counter[segment_position_first] = 1
+    else:
+        segment_position_first_emissions[da][segment_position_first] = 1
