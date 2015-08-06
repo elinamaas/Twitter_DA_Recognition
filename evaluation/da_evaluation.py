@@ -4,15 +4,15 @@ from da_recognition import dialogue_acts_taxonomy
 from tabulate import tabulate
 
 
-def evaluation_taxonomy(taxonomy_name):
+def evaluation_taxonomy(taxonomy_name, cursor):
     taxonomy_tree = dialogue_acts_taxonomy.build_taxonomy(taxonomy_name)
     da_names = taxonomy_tree.all_nodes()
     evaluation_data = list()
     for da in da_names:
         da_name = da.tag
         occurance_golden_standard = len(postgres_queries.find_all_da_occurances_taxonomy('segmentation',
-                                                                                     da_name, taxonomy_name))
-        tp, fp = find_tp_fp(taxonomy_name, da_name)
+                                                                                     da_name, taxonomy_name, cursor))
+        tp, fp = find_tp_fp(taxonomy_name, da_name, cursor)
         precision = calculate_precision(tp, fp)
         recall = calculate_recall(tp, occurance_golden_standard)
         f_measure = calculate_f_measure(precision, recall)
@@ -22,15 +22,17 @@ def evaluation_taxonomy(taxonomy_name):
     print_evaluation(taxonomy_name, evaluation_data)
 
 
-def find_tp_fp(taxonomy, da_name):
+def find_tp_fp(taxonomy, da_name, cursor):
     tp = 0
     fp = 0
-    records = postgres_queries.find_all_da_occurances_taxonomy('Segmentation_Prediction', da_name, taxonomy)
+    records = postgres_queries.find_all_da_occurances_taxonomy('Segmentation_Prediction', da_name, taxonomy, cursor)
     for record in records:
         tweet_id = record[0]
-        segments_offset = record[1]
-        da = record[2]
-        da_gs = postgres_queries.find_da_for_segment(tweet_id, segments_offset, taxonomy)
+        # segments_offset = record[1]
+        start_offset = record[1]
+        end_offset = record[2]
+        da = record[3]
+        da_gs = postgres_queries.find_da_for_segment(tweet_id, start_offset, end_offset, taxonomy, cursor)
         if da == da_gs:
             tp += 1
         else:

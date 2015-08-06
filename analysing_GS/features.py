@@ -31,12 +31,12 @@ def calculate_da_bigrams(taxonomy): #overall
     return bigrams
 
 
-def find_children_bigrams(tweet_id, previous_da, bigrams, taxonomy):
-    children = postgres_queries.find_children(tweet_id)
+def find_children_bigrams(tweet_id, previous_da, bigrams, taxonomy, cursor):
+    children = postgres_queries.find_children(tweet_id, cursor)
     previous_tweet_da = previous_da
     if len(children) == 1:
         tweet_id_child = int(children[0][0])
-        segments = postgres_queries.find_segments(tweet_id_child)
+        segments = postgres_queries.find_segments(tweet_id_child, cursor)
         # segments_da = sort_segments(segments, 'full')
         for segment in segments:
             da = fetch_da_taxonomy(segment, taxonomy)
@@ -51,10 +51,10 @@ def find_children_bigrams(tweet_id, previous_da, bigrams, taxonomy):
                 bigrams[previous_da] = {}
                 bigrams[previous_da][da] = 1
             previous_da = da
-        find_children_bigrams(tweet_id_child, previous_da, bigrams, taxonomy)
+        find_children_bigrams(tweet_id_child, previous_da, bigrams, taxonomy, cursor)
     elif len(children) > 1:
         for child in children:
-            segments = postgres_queries.find_segments(int(child[0]))
+            segments = postgres_queries.find_segments(int(child[0]), cursor)
             # segments_da = sort_segments(segments, 'full')
             # for start_offset, da in segments_da.iteritems():
             for segment in segments:
@@ -69,7 +69,7 @@ def find_children_bigrams(tweet_id, previous_da, bigrams, taxonomy):
                     bigrams[previous_da] = {}
                     bigrams[previous_da][da] = 1
                 previous_da = da
-            find_children_bigrams(int(child[0]), previous_da, bigrams, taxonomy)
+            find_children_bigrams(int(child[0]), previous_da, bigrams, taxonomy, cursor)
     else:
         end_symbol = '<E>'
         if previous_da in bigrams:
@@ -206,18 +206,18 @@ def calculate_da_lang_model_unigrams(taxonomy):
 #     return da_lang_model
 
 
-def unigrams_training_set(training_set, taxonomy):
+def unigrams_training_set(training_set, taxonomy, cursor):
     number_start_symbol = len(training_set)
     unigrams = dict()
     unigrams['<S>'] = number_start_symbol
     end_symbol = '<E>'
-    number_end_symbols = postgres_queries.count_end_conversation()
+    number_end_symbols = postgres_queries.count_end_conversation(cursor)
     unigrams[end_symbol] = number_end_symbols
     for conversation in training_set:
         all_nodes = conversation.all_nodes()
         for node in all_nodes:
             tweet_id = node.tag
-            segments = postgres_queries.find_segments(tweet_id)
+            segments = postgres_queries.find_segments(tweet_id, cursor)
             for segment in segments:
                 if taxonomy == 'full':
                     if segment[2] in unigrams:
@@ -238,14 +238,14 @@ def unigrams_training_set(training_set, taxonomy):
     return unigrams
 
 
-def bigram_test_set(training_set, taxonomy):
+def bigram_test_set(training_set, taxonomy, cursor):
     bigram_count = 0
     bigram_dict = collections.defaultdict(list)
     conversation_start = '<S>'
     for conversation in training_set:
         root = conversation.root
         if root is not None:
-            segments = postgres_queries.find_segments(root)
+            segments = postgres_queries.find_segments(root, cursor)
             # sorted_segments = sort_segments(s_egments, 'full')
             previous_da = conversation_start
             for segment in segments:
@@ -262,7 +262,7 @@ def bigram_test_set(training_set, taxonomy):
                     bigram_dict[previous_da] = {}
                     bigram_dict[previous_da][da] = 1
                 previous_da = da
-            find_children_bigrams(root, previous_da, bigram_dict, taxonomy)
+            find_children_bigrams(root, previous_da, bigram_dict, taxonomy, cursor)
     # bigram_count = sum(bigram_dict.values())
     return bigram_dict
 
@@ -284,13 +284,13 @@ def bigram_test_set(training_set, taxonomy):
 #     return sorted_segments
 
 
-def extract_features_test_set(data_set):
+def extract_features_test_set(data_set, cursor):
     taxonomy = 'full' #it doesn_t matter which taxonomy, we make here predictions
     features_list = list()
     conversation_pathes_tweet_id = list()
     for conversation in data_set:
         root_id = conversation.root
-        root_username = postgres_queries.find_username_by_tweet_id(root_id)
+        root_username = postgres_queries.find_username_by_tweet_id(root_id, cursor)
         all_conversation_branches = conversation.paths_to_leaves()
         # conversation_path_tweet_id.append(all_conversation_branches)
         for branch in all_conversation_branches:
@@ -298,9 +298,9 @@ def extract_features_test_set(data_set):
             feature_branch = list()
             # t = 0
             for tweet_id in branch:
-                segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy)
+                segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy, cursor)
                 # t += len(segments)
-                current_username = postgres_queries.find_username_by_tweet_id(tweet_id)
+                current_username = postgres_queries.find_username_by_tweet_id(tweet_id, cursor)
                 same_username = (root_username == current_username)
                 if same_username is True:
                     same_username = 1
@@ -319,21 +319,21 @@ def extract_features_test_set(data_set):
     return features_list, conversation_pathes_tweet_id
 
 
-def extract_features(training_set, taxonomy, states): #check if in the training set is only german tweets
+def extract_features(training_set, taxonomy, states, cursor): #check if in the training set is only german tweets
     observations_length = set()
     emissions_length = collections.defaultdict()
     da_root_username_emissions = collections.defaultdict(dict)
     observation_root_username = [0, 1] # root, not_root
     for conversation in training_set:
         root = conversation.root
-        root_username = postgres_queries.find_username_by_tweet_id(root)
+        root_username = postgres_queries.find_username_by_tweet_id(root, cursor)
         all_nodes = conversation.all_nodes()
         for node in all_nodes:
             tweet_id = node.tag
-            current_username = postgres_queries.find_username_by_tweet_id(tweet_id)
+            current_username = postgres_queries.find_username_by_tweet_id(tweet_id, cursor)
             # here!!!
 
-            segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy)
+            segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy, cursor)
             for i in range(0, len(segments),1):
                 segment = segments[i]
             # for segment in segments:
@@ -341,9 +341,9 @@ def extract_features(training_set, taxonomy, states): #check if in the training 
                 build_length_utterance_emissions(segment, observations_length, emissions_length)
 
     observations_length = list(observations_length)
-    s_count = count_start_conversation()
+    s_count = count_start_conversation(cursor)
     emissions_length['<S>'] = {0:s_count}
-    e_count = count_end_conversation()
+    e_count = count_end_conversation(cursor)
     emissions_length['<E>'] = {0:e_count}
     emissions_probability_length = calculate_emission_probability_feature(emissions_length, states, observations_length)
     emissions_probability_root_username = calculate_emission_probability_feature(da_root_username_emissions,
@@ -369,7 +369,7 @@ def build_root_usersname_emissions(root_username, current_username, segment, da_
         same_username = 1
     else:
         same_username = 0
-    da = segment[2]
+    da = segment[3]
     if da in da_root_username_emissions:
         if same_username in da_root_username_emissions[da]:
             da_root_username_emissions[da][same_username] += 1

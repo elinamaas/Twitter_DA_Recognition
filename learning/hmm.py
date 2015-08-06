@@ -9,17 +9,18 @@ from postgres import postgres_queries
 __author__ = 'snownettle'
 #hidden markov model
 
-def calculate_hmm(training_set, test_set, taxonomy):
+def calculate_hmm(training_set, test_set, taxonomy, cursor, connection):
     # unigrams = features.calculate_da_unigrams('full')
     # taxonomy = 'full'
-    unigrams = features.unigrams_training_set(training_set, taxonomy)
+    unigrams = features.unigrams_training_set(training_set, taxonomy, cursor)
 
     states = find_states(unigrams) # da labels
     n_states = len(states)
     start_probability = calculate_start_probability(unigrams, states)
-    transition_probability = calculate_transition_probability(training_set, states, taxonomy)
+    transition_probability = calculate_transition_probability(training_set, states, taxonomy, cursor)
 
-    observations, emissions, observations_product = analysing_GS.features.extract_features(training_set, taxonomy, states)
+    observations, emissions, observations_product = analysing_GS.features.extract_features(
+        training_set, taxonomy, states, cursor)
     emission_probability = calculate_emission_probability(states, observations_product,
                                                           observations, emissions)
 
@@ -27,7 +28,7 @@ def calculate_hmm(training_set, test_set, taxonomy):
     model._set_startprob(start_probability)
     model._set_transmat(transition_probability)
     model._set_emissionprob(emission_probability)
-    test_seq, branches = features.extract_features_test_set(test_set)
+    test_seq, branches = features.extract_features_test_set(test_set, cursor)
     for i in range(0, len(test_seq), 1):
         path_observation = test_seq[i]
         dialog = decode_test_observations(path_observation, observations_product)
@@ -39,7 +40,8 @@ def calculate_hmm(training_set, test_set, taxonomy):
             dialog_act_name = states[dialog_act_id]
             segment = branches[i][j]
             tweet_id = str(segment[0])
-            postgres_queries.update_da_prediction(dialog_act_name, tweet_id, segment[1], segment[2], taxonomy)
+            postgres_queries.update_da_prediction(dialog_act_name, tweet_id, segment[1], segment[2],
+                                                  taxonomy, cursor, connection)
             # i += 1
         #print "Alice hears:", ", ".join(map(lambda x: states[x], alice_hears))
     # print "Bob says:", ", ".join(map(lambda x: str(observations[x]), bob_says))
@@ -76,8 +78,9 @@ def calculate_start_probability(unigrams,states):
     start_pobability = np.array(start_pobability_list)
     return start_pobability
 
-def calculate_transition_probability(training_set, states, taxonomy):
-    bigrams = features.bigram_test_set(training_set, taxonomy)
+
+def calculate_transition_probability(training_set, states, taxonomy, cursor):
+    bigrams = features.bigram_test_set(training_set, taxonomy, cursor)
     transitions = collections.defaultdict(list)
     # checking = 0
     for start_da, end_da_count in bigrams.iteritems():

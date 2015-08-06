@@ -13,8 +13,10 @@ def assign_inform_da():
     da_id_min = postgres_queries.find_da_by_name(da_min, 'dialogue_act_minimal')
     for record in records:
         tweet_id = record[0]
-        segments_offset = record[1]
-        insert_to_table.insert_into_segmantation_prediction_table(tweet_id, segments_offset, da_id_full,
+        # segments_offset = record[1]
+        start_offset = record[1]
+        end_offset = record[2]
+        insert_to_table.insert_into_segmantation_prediction_table(tweet_id, start_offset, end_offset, da_id_full,
                                                                   da_id_reduced, da_id_min)
 
 

@@ -51,7 +51,7 @@ def insert_into_edit_tweet_table(conversation_list):
     postgres_configuration.close_connection(connection)
 
 
-def insert_dialogue_act_names_full():
+def insert_dialogue_act_names_full(connection, cursor):
     if select_da('Dialogue_act_full'):
         dialogue_act_names_tree = dialogue_acts_taxonomy.build_da_taxonomy_full()
         root = dialogue_act_names_tree.root
@@ -59,14 +59,14 @@ def insert_dialogue_act_names_full():
         da_tuple = (1, root, None)
         da_list.append(da_tuple)
         da_tuple = find_children(dialogue_act_names_tree, root, da_list)
-        connection, cursor = postgres_configuration.make_connection()
+        # connection, cursor = postgres_configuration.make_connection()
         query = "INSERT INTO Dialogue_act_full (Dialogue_act_id, Dialogue_act_name, Parent_act_id) VALUES (%s, %s, %s)"
         cursor.executemany(query, da_tuple)
         connection.commit()
-        postgres_configuration.close_connection(connection)
+        # postgres_configuration.close_connection(connection)
 
 
-def insert_dialogue_act_names_reduced():
+def insert_dialogue_act_names_reduced(connection, cursor):
     if select_da('Dialogue_act_reduced'):
         dialogue_act_names_tree = dialogue_acts_taxonomy.build_da_taxonomy_reduced()
         root = dialogue_act_names_tree.root
@@ -74,15 +74,15 @@ def insert_dialogue_act_names_reduced():
         da_tuple = (1, root, None)
         da_list.append(da_tuple)
         da_tuple = find_children(dialogue_act_names_tree, root, da_list)
-        connection, cursor = postgres_configuration.make_connection()
+        # connection, cursor = postgres_configuration.make_connection()
         query = "INSERT INTO Dialogue_act_reduced (Dialogue_act_id, Dialogue_act_name, Parent_act_id) " \
                 "VALUES (%s, %s, %s)"
         cursor.executemany(query, da_tuple)
         connection.commit()
-        postgres_configuration.close_connection(connection)
+        # postgres_configuration.close_connection(connection)
 
 
-def insert_dialogue_act_names_minimal():
+def insert_dialogue_act_names_minimal(connection, cursor):
     if select_da('Dialogue_act_minimal'):
         dialogue_act_names_tree = dialogue_acts_taxonomy.build_da_taxonomy_minimal()
         root = dialogue_act_names_tree.root
@@ -90,12 +90,12 @@ def insert_dialogue_act_names_minimal():
         da_tuple = (1, root, None)
         da_list.append(da_tuple)
         da_tuple = find_children(dialogue_act_names_tree, root, da_list)
-        connection, cursor = postgres_configuration.make_connection()
+        # connection, cursor = postgres_configuration.make_connection()
         query = "INSERT INTO Dialogue_act_minimal (Dialogue_act_id, Dialogue_act_name, Parent_act_id) " \
                 "VALUES (%s, %s, %s)"
         cursor.executemany(query, da_tuple)
         connection.commit()
-        postgres_configuration.close_connection(connection)
+        # postgres_configuration.close_connection(connection)
 
 
 def find_children(tree, parent, da_list):
@@ -178,11 +178,11 @@ def insert_annotated_tweets_to_segment_table(tweets_list): # insert to segment t
     postgres_configuration.close_connection(connection)
 
 
-def insert_into_segmantation_prediction_table(tweet_id, segments_offset, da_id_full, da_reduced, da_min):
+def insert_into_segmantation_prediction_table(tweet_id, start_offset, end_offset, da_id_full, da_reduced, da_min):
     connection, cursor = postgres_configuration.make_connection()
-    query = 'INSERT INTO Segmentation_Prediction (Tweet_id, Segmentation_offsets, dialogue_act_id_full, ' \
+    query = 'INSERT INTO Segmentation_Prediction (Tweet_id, start_offset, end_offset, dialogue_act_id_full, ' \
             'dialogue_act_id_reduced, dialogue_act_id_min)' \
-            'VALUES (%s, \' %s \', %s, %s, %s) ' %(tweet_id, segments_offset, da_id_full, da_reduced, da_min)
+            'VALUES (%s, %s , %s,  %s, %s, %s) ' %(tweet_id, start_offset, end_offset, da_id_full, da_reduced, da_min)
     cursor.execute(query)
     connection.commit()
     postgres_configuration.close_connection(connection)

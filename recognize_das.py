@@ -56,15 +56,16 @@ from evaluation import da_evaluation
 
 ###################### NEW ################################
 print 'start'
+connection, cursor = postgres_configuration.make_connection()
 if postgres_configuration.check_if_exists_tweet_table() is False:
     # create db
     postgres_configuration.create_db()
     print 'Database is created'
 
     # insert dit++
-    insert_to_table.insert_dialogue_act_names_full()
-    insert_to_table.insert_dialogue_act_names_reduced()
-    insert_to_table.insert_dialogue_act_names_minimal()
+    insert_to_table.insert_dialogue_act_names_full(connection, cursor)
+    insert_to_table.insert_dialogue_act_names_reduced(connection, cursor)
+    insert_to_table.insert_dialogue_act_names_minimal(connection, cursor)
     print 'DIT++ taxonomy is inserted'
 
     # insert golden standard to db
@@ -91,7 +92,7 @@ else:
 
 
 # predictions
-# print 'Baseline'
+print 'Baseline'
 # baseline.assign_inform_da()
 #
 # print 'Baseline evaluation'
@@ -101,8 +102,8 @@ else:
 
 print 'Supervised learning: HMM'
 print 'Full Taxonomy'
-supervised_learning.hmm_utterance_length('full')
-da_evaluation.evaluation_taxonomy('full')
+supervised_learning.hmm_utterance_length('full', cursor, connection)
+da_evaluation.evaluation_taxonomy('full', cursor)
 # print 'Reduced taxonomy'
 # supervised_learning.hmm_utterance_length('reduced')
 # da_evaluation.evaluation_taxonomy('reduced')
@@ -110,3 +111,4 @@ da_evaluation.evaluation_taxonomy('full')
 # supervised_learning.hmm_utterance_length('minimal')
 # da_evaluation.evaluation_taxonomy('minimal')
 
+postgres_configuration.close_connection(connection)
