@@ -4,7 +4,7 @@ from da_recognition import dialogue_acts_taxonomy
 from tabulate import tabulate
 
 
-def evaluation_taxonomy(taxonomy_name, cursor):
+def evaluation_taxonomy_da(taxonomy_name, cursor):
     taxonomy_tree = dialogue_acts_taxonomy.build_taxonomy(taxonomy_name)
     da_names = taxonomy_tree.all_nodes()
     evaluation_data = list()
@@ -70,3 +70,29 @@ def print_evaluation(taxonomy, evaluation_data):
 # evaluation_taxonomy('full')
 # evaluation_taxonomy('reduced')
 # evaluation_taxonomy('min')
+
+
+def overall_evaluation(taxonomy_name, cursor):
+    taxonomy_tree = dialogue_acts_taxonomy.build_taxonomy(taxonomy_name)
+    da_names = taxonomy_tree.all_nodes()
+    evaluation_data = list()
+    tp = 0
+    fp = 0
+    fn = 0
+    for da in da_names:
+        da_name = da.tag
+        occurance_golden_standard = len(postgres_queries.find_all_da_occurances_taxonomy('segmentation',
+                                                                                     da_name, taxonomy_name, cursor))
+        tp_da, fp_da = find_tp_fp(taxonomy_name, da_name, cursor)
+        tp += tp_da
+        fp += fp_da
+        fn += occurance_golden_standard
+    precision = calculate_precision(tp, fp)
+    recall = calculate_recall(tp, fn)
+    f_measure = calculate_f_measure(precision, recall)
+    da_evaluation = [precision, recall, f_measure]
+    evaluation_data.append(da_evaluation)
+    # header_data = ['dialogue act name', 'precision', 'recall', 'F-measure']
+    # print_evaluation(taxonomy_name, evaluation_data)
+    print 'Overall evaluation for ' + taxonomy_name + ' taxonomy'
+    print tabulate(evaluation_data, headers=['precision', 'recall', 'F-measure'])

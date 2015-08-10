@@ -103,12 +103,15 @@ print 'Baseline'
 print 'Supervised learning: HMM'
 print 'Full Taxonomy'
 supervised_learning.hmm_utterance_length('full', cursor, connection)
-da_evaluation.evaluation_taxonomy('full', cursor)
+da_evaluation.evaluation_taxonomy_da('full', cursor)
+da_evaluation.overall_evaluation('full', cursor)
 print 'Reduced taxonomy'
 supervised_learning.hmm_utterance_length('reduced', cursor, connection)
-da_evaluation.evaluation_taxonomy('reduced', cursor)
+da_evaluation.evaluation_taxonomy_da('reduced', cursor)
+da_evaluation.overall_evaluation('reduced', cursor)
 print 'Minimal Taxonomy'
 supervised_learning.hmm_utterance_length('minimal', cursor, connection)
-da_evaluation.evaluation_taxonomy('minimal', cursor)
+da_evaluation.evaluation_taxonomy_da('minimal', cursor)
+da_evaluation.overall_evaluation('minimal', cursor)
 
 postgres_configuration.close_connection(connection)
