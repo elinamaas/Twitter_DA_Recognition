@@ -1,13 +1,22 @@
+import collections
+import itertools
+import re
+
 import numpy as np
+import nltk
+
+from analysing_GS.calculate_emissions import build_hashtag_emissions, build_length_utterance_emissions, \
+    calculate_emission_probability_feature, build_segment_position_emissions, build_explanation_mark_emissions, \
+    build_question_mark_emissions, build_root_usersname_emissions, has_link, build_link_emissions
+from analysing_GS.extract_features import is_link, has_numbers, has_explanation_mark, has_hashtag, has_question_mark
+from postgres.postgres_queries import count_start_conversation, count_end_conversation
+from postgres import postgres_queries
+from pattern.de import conjugate
+from pattern.de import parse, split, INFINITIVE
 
 __author__ = 'snownettle'
-from nltk import WhitespaceTokenizer
-from postgres.postgres_queries import find_utterance_tweet, count_start_conversation, count_end_conversation
 
-from postgres import postgres_queries
-import collections
-import nltk
-import itertools
+# import snowballstemmer
 
 
 def calculate_da_bigrams(taxonomy): #overall
@@ -318,9 +327,14 @@ def extract_features_test_set(data_set, cursor):
                 # for start_offset, end_offset_utterance in segments.iteritems():
                     start_offset = segment[0]
                     end_offset = segment[1]
+                    link = is_link(segment[2])
+                    question_mark = has_question_mark(segment[2])
+                    explanation_mark = has_explanation_mark(segment[2])
+                    hashtag = has_hashtag(segment[2])
                     conversation_path_tweet_id.append([tweet_id, start_offset, end_offset])
                     segment_len = end_offset - start_offset + 1
-                    feature_branch.append([segment_len, same_username, segment_position_first])
+                    # add feature token - check if we have them, make as a list
+                    feature_branch.append([segment_len, same_username, segment_position_first, link, question_mark, explanation_mark, hashtag])
             features_list.append(feature_branch)
             conversation_pathes_tweet_id.append(conversation_path_tweet_id)
     return features_list, conversation_pathes_tweet_id
@@ -330,9 +344,21 @@ def extract_features(training_set, taxonomy, states, cursor): #check if in the t
     observations_length = set()
     emissions_length = collections.defaultdict()
     da_root_username_emissions = collections.defaultdict(dict)
+    link_emissions = collections.defaultdict(dict)
     segment_position_first_emissions = collections.defaultdict(dict)
+    tf_features = collections.defaultdict(dict)
+    question_mark_emissions = collections.defaultdict(dict)
+    explanation_mark_emissions = collections.defaultdict(dict)
+    hashtag_emissions = collections.defaultdict(dict)
     observation_root_username = [0, 1] # root, not_root
     observation_segment_position = [0, 1] # first segment, not first segment
+    observation_link = [0, 1] # segment has link or not
+    observation_question_mark = [True, False]
+    observation_explanation_mark = [True, False]
+    observation_hashtags = [True, False]
+    # observation_tokens = set()
+    number_of_segments = 0
+    idf_features = dict()
     for conversation in training_set:
         root = conversation.root
         root_username = postgres_queries.find_username_by_tweet_id(root, cursor)
@@ -343,7 +369,8 @@ def extract_features(training_set, taxonomy, states, cursor): #check if in the t
             # here!!!
             segment_position_first = 0 # aka False
             segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy, cursor)
-            for i in range(0, len(segments),1):
+            number_of_segments += len(segments)
+            for i in range(0, len(segments), 1):
                 segment = segments[i]
                 if i == 0:
                     segment_position_first = 1 # aka true
@@ -352,81 +379,69 @@ def extract_features(training_set, taxonomy, states, cursor): #check if in the t
                 build_root_usersname_emissions(root_username, current_username, segment, da_root_username_emissions)
                 build_length_utterance_emissions(segment, observations_length, emissions_length)
                 build_segment_position_emissions(segment_position_first, segment, segment_position_first_emissions)
+                build_link_emissions(segment, link_emissions)
+                build_question_mark_emissions(segment, question_mark_emissions)
+                build_explanation_mark_emissions(segment, explanation_mark_emissions )
+                build_hashtag_emissions(segment, hashtag_emissions)
 
+                # build_emoticons_emissions(segment, emoticons_emissions)
+
+                # term_frequency(segment, tf_features, observation_tokens)
+                # inverse_document_frequency(segment, idf_features)
+
+    # tfidf = calculate_tfidf(tf_features)
+    # for a, b in tfidf.iteritems():
+    #     print sum(b.values())
+    # tf = calculate_tf(tf_features)
+    # idf = calculate_idf(number_of_segments, idf_features)
+    # sorted_x = sorted(idf_features.items(), key=operator.itemgetter(1))
+    # sorted_x.reverse()
+    # delete not frequent words
+    # tf_norm = tf_normalization(tf_features)
+    # idf_norm = idf_normalization(tf_features, observation_tokens)
+    # calculate_emission_probability_tfidf(tf_norm, idf_norm, observation_tokens, states)
     observations_length = list(observations_length)
+    # observation_tokens = list(observation_tokens)
     s_count = count_start_conversation(cursor)
     emissions_length['<S>'] = {0: s_count}
     e_count = count_end_conversation(cursor)
     emissions_length['<E>'] = {0: e_count}
+
+
+    # emissions_probability_tf = calculate_emission_probability_feature(tf_norm, states, observation_tokens)
+    # token_observations_boolean = token_observations(observation_tokens)
     emissions_probability_length = calculate_emission_probability_feature(emissions_length, states, observations_length)
+    # emission_probability_tf = calculate_emissions_unigrams(observation_tokens, token_observations_boolean, tf_norm, states)
     emissions_probability_root_username = calculate_emission_probability_feature(da_root_username_emissions,
                                                                                  states, observation_root_username)
     emissions_probability_segment_position = calculate_emission_probability_feature(segment_position_first_emissions,
                                                                                     states, observation_segment_position)
-    observation = [observations_length, observation_root_username, observation_segment_position]
-    emission = [emissions_probability_length, emissions_probability_root_username, emissions_probability_segment_position]
-    observation_product = itertools.product(observations_length, observation_root_username, observation_segment_position)
+    emissions_probability_link = calculate_emission_probability_feature(link_emissions, states, observation_link)
+
+    emissions_probability_questoin_mark = calculate_emission_probability_feature(question_mark_emissions, states, observation_question_mark)
+    emissions_probability_explanation_mark = calculate_emission_probability_feature(explanation_mark_emissions, states, observation_explanation_mark)
+    emissions_probability_hashtag = calculate_emission_probability_feature(hashtag_emissions, states, observation_hashtags)
+
+    # emissionn_probability_tf = calculate_emission_probability_feature(tf_features, states, observation_tokens)
+
+    observation = [observations_length, observation_root_username, observation_segment_position,
+                   observation_link, observation_question_mark, observation_explanation_mark, observation_hashtags]
+             # \
+             #      + token_observations_boolean
+    # arrays = [observations_length, observation_root_username, observation_segment_position, observation_link]\
+             # \
+             #  + token_observations_boolean
+    observation_product = itertools.product(*observation)
     observation_product = list(observation_product)
+
+    emission = [emissions_probability_length, emissions_probability_root_username,
+                emissions_probability_segment_position, emissions_probability_link, emissions_probability_questoin_mark,
+                emissions_probability_explanation_mark, emissions_probability_hashtag]
+               # + emission_probability_tf
+
+    # observation_product = itertools.product(observations_length, observation_root_username,
+    #                                         observation_segment_position, observation_link, token_observations_boolean)
     return observation, emission, observation_product
-
-
-def build_root_usersname_emissions(root_username, current_username, segment, da_root_username_emissions):
-    """
-
-    :type da_root_username_emissions: collections.defaultdict(dict)
-    """
-    same_username = (root_username == current_username)
-    if same_username is True:
-        same_username = 1
-    else:
-        same_username = 0
-    da = segment[3]
-    if da in da_root_username_emissions:
-        if same_username in da_root_username_emissions[da]:
-            da_root_username_emissions[da][same_username] += 1
-        else:
-            da_root_username_emissions[da][same_username] = 1
-    else:
-        da_root_username_emissions[da][same_username] = 1
-
-
-def build_length_utterance_emissions(segment, observations_length, emissions_length):
-    start_offset = segment[0]
-    end_offset = segment[1]
-    segment_len = end_offset - start_offset + 1
-    # if '@' in segment[0]:
-    #     segment_len = len(WhitespaceTokenizer().tokenize(segment[0]))
-    observations_length.add(segment_len)
-    da = segment[3]
-    if da in emissions_length:
-        da_utterance_len = emissions_length[da]
-        if segment_len in da_utterance_len:
-            da_utterance_len[segment_len] += 1
-        else:
-            da_utterance_len[segment_len] = 1
-            # emissions[segment[1]] = {segment_len:1}
-    else:
-        da_utterance_len = dict()
-        da_utterance_len[segment_len] = 1
-        emissions_length[da] = da_utterance_len
-
-
-def calculate_emission_probability_feature(emissions, states, observations):
-    for i in range(0, len(states), 1):
-        occurancy = emissions[states[i]]
-        total_number = sum(occurancy.values())
-        probabilities = list()
-        for j in range(0, len(observations), 1):
-            if observations[j] in occurancy:
-                pr = occurancy[observations[j]]/float(total_number)
-                probabilities.append(pr)
-            else:
-                probabilities.append(0)
-        if i == 0:
-            emission_probability = np.array(probabilities)
-        else:
-            emission_probability = np.vstack((emission_probability, probabilities))
-    return emission_probability
 
 
 def fetch_da_taxonomy(segment, taxonomy):
@@ -439,13 +454,202 @@ def fetch_da_taxonomy(segment, taxonomy):
     return da
 
 
-def build_segment_position_emissions(segment_position_first, segment, segment_position_first_emissions):
+def term_frequency(segment, tf_features, observation_tokens):
     da = segment[3]
-    if da in segment_position_first_emissions:
-        segment_position_counter = segment_position_first_emissions[da]
-        if segment_position_first in segment_position_counter:
-            segment_position_counter[segment_position_first] += 1
-        else:
-            segment_position_counter[segment_position_first] = 1
-    else:
-        segment_position_first_emissions[da][segment_position_first] = 1
+    utterance = segment[2]
+    if '@' in utterance:
+        utterance = delete_username(utterance)
+    if has_link(utterance):
+        utterance = delete_link(utterance)
+    utterance = delete_non_alphabetic_symbols(utterance)
+    sentences = parse(utterance, relations=True, lemmata=True).split()
+    # tokens = utterance.split(' ')
+    for sentence in sentences:
+        for token in sentence:
+            lemma = token[5]
+            if len(lemma) > 2:
+                observation_tokens.add(lemma)
+                if da in tf_features:
+                    tf = tf_features[da]
+                    if lemma in tf:
+                        tf[lemma] += 1
+                    else:
+                        tf[lemma] = 1
+                else:
+                    tf_features[da][lemma] = 1
+
+
+# def calculate_tf(tf_features):
+#     tf_values = collections.defaultdict(dict)
+#     for da, tf in tf_features.iteritems():
+#         number_of_tokens = sum(tf.values())
+#         for token, freq in tf.iteritems():
+#             tf_values[da][token] = math.log10(1 + freq/float(number_of_tokens))
+#             # tf_values[da][token] = freq/float(number_of_tokens)
+#     return tf_values
+
+
+# def inverse_document_frequency(segment, idf_features):
+#     utterance = segment[2]
+#     da = segment[3]
+#     if '@' in utterance:
+#         utterance = delete_username(utterance)
+#     utterance = delete_non_alphabetic_symbols(utterance)
+#     sentences = parse(utterance, relations=True, lemmata=True).split()
+#     # tokens = utterance.split(' ')
+#     for sentence in sentences:
+#         for token in sentence:
+#             lemma = token[5]
+#             if len(lemma) > 2:
+#                 if da in idf_features:
+#                     idf_features[da].add(lemma)
+#                 else:
+#                     t = set()
+#                     t.add(lemma)
+#                     idf_features[da] = t
+
+
+# def calculate_tfidf(tf):
+#     tfidf = collections.defaultdict(dict)
+#     idf = tf.copy()
+#     das_list = idf.keys()
+#     for da, tf_value in tf.iteritems():
+#         number_of_terms = sum(tf_value.values())
+#         for token, value in tf_value.iteritems():
+#             nt = 0
+#             for key in das_list:
+#                 token_list = idf[key]
+#                 if token in token_list:
+#                     nt += 1
+#             tfidf[da][token] = value/float(number_of_terms)*math.log10(len(das_list)/float(nt))
+#     return tfidf
+
+
+
+# def calculate_idf(number_of_segments, idf_features):
+#     idf = dict()
+#     for token, freq in idf_features.iteritems():
+#         idf[token] = math.log10(number_of_segments/float(freq))
+#     return idf
+
+
+def delete_non_alphabetic_symbols(token):
+    if has_numbers(token):
+        token = re.sub('\d', '', token)
+    chars_to_remove = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '[', ']', '{', '}', ';', ':', ',', '.',
+                       '/', '<', '>', '?', '`', '\\', '~', '-', '=', '_', '+''|', u'\xe2', u'\x80', u'\xa6']
+    rx = '[' + re.escape(''.join(chars_to_remove)) + ']'
+    return re.sub(rx, ' ', token).lower()
+    # pattern = re.compile('[!@#$%^&*()[]{};:,./<>?\|`~-=_+]')
+    # return pattern.sub('', token).lower()
+
+
+def lemmatize(token):
+    l = parse(token)
+    k = split(l)
+    print conjugate(token, INFINITIVE)
+
+
+def delete_username(utterance):
+    new_utterance = ''
+    tokens = utterance.split(' ')
+    for token in tokens:
+        if '@' not in token:
+            new_utterance += token + ' '
+    return new_utterance[:-1]
+
+
+def delete_link(utterance):
+    new_utterance = ''
+    tokens = utterance.split(' ')
+    for token in tokens:
+        if 'http:' not in token:
+            new_utterance += token + ' '
+    return new_utterance[:-1]
+
+
+def tf_normalization(terms_frequency):
+    tf_norm = collections.defaultdict(dict)
+    for da, term_freq in terms_frequency.iteritems():
+        total_number_of_terms = sum(term_freq.values())
+        for token, freq in term_freq.iteritems():
+            tf_norm[da][token] = freq/float(total_number_of_terms)
+    return tf_norm
+
+
+# def idf_normalization(terms_frequency, observation_tokens):
+#     idf_norm = dict()
+#     total_numbers_of_documents = len(terms_frequency)
+#     dialog_acts = terms_frequency.keys()
+#     for token in observation_tokens:
+#         number_doc_with_term = 0
+#         for da in dialog_acts:
+#             term_freq = terms_frequency[da]
+#             if token in term_freq:
+#                 number_doc_with_term += 1
+#         idf_norm[token] = 1 + math.log(total_numbers_of_documents/float(number_doc_with_term))
+#     return idf_norm
+
+
+# def calculate_emission_probability_tfidf(tf_norm, idf_norm, observations, states):
+#     for i in range(0, len(states),1):
+#         state = states[i]
+#         terms_freq = tf_norm[state]
+#         tfidf_for_one_state = list()
+#         for observation in observations:
+#             if observation in terms_freq:
+#                 tfidf = terms_freq[observation]*idf_norm[observation]
+#             else:
+#                 tfidf = 0
+#             tfidf_for_one_state.append(tfidf)
+#         if i == 0:
+#             print sum(tfidf_for_one_state)
+#             emission_probability = np.array(tfidf_for_one_state)
+#         else:
+#             print sum(tfidf_for_one_state)
+#             emission_probability = np.vstack((emission_probability, tfidf_for_one_state))
+#     return emission_probability
+
+
+def token_observations(observations):
+    token_obs = list()
+    for token in observations:
+        obs = [False, True]
+        token_obs.append(obs)
+    return token_obs
+
+
+def calculate_emissions_unigrams(token_observations, token_observations_boolean, tf, states):
+    new_tf_dict = dict()
+    for i in range(0, len(states), 1):
+        state = states[i]
+        bool_tokens_emissions = list()
+        for j in range(0, len(token_observations), 1):
+            token = token_observations[j]
+            if state in tf:
+                tf_norm = tf[state]
+                if token in tf_norm:
+                    value = tf_norm[token]
+                    emission = [1-value, value]
+                    bool_tokens_emissions.append(emission)
+                else:
+                    emission = [1, 0]
+                    bool_tokens_emissions.append(emission)
+            else:
+                emission = [0, 0]
+                bool_tokens_emissions.append(emission)
+
+        new_tf_dict[state] = bool_tokens_emissions
+    emissions_list = list()
+    for j in range(0, len(token_observations), 1):
+        for i in range(0, len(states), 1):
+            state = states[i]
+            if i == 0:
+                emission_probability = np.array(new_tf_dict[state][j])
+            else:
+                emission_probability = np.vstack((emission_probability, new_tf_dict[state][j]))
+        emissions_list.append(emission_probability)
+    return emissions_list
+
+
+
