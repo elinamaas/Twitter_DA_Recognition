@@ -1,5 +1,7 @@
 import numpy as np
-from analysing_GS.extract_features import is_link
+
+from analysing_GS.features import is_link, has_emoticons, has_question_word, is_first_verb
+import emoticons
 
 __author__ = 'snownettle'
 
@@ -18,6 +20,45 @@ def build_hashtag_emissions(segment, hashtag_emissions):
             hashtag_emissions[da][question_mark] = 1
     else:
         hashtag_emissions[da][question_mark] = 1
+
+
+def build_emoticons_emissions(segment, emoticons_emissions):
+    utterance = segment[2]
+    da = segment[3]
+    emoticons_bool = has_emoticons(utterance)
+    if da in emoticons_emissions:
+        if emoticons_bool in emoticons_emissions[da]:
+            emoticons_emissions[da][emoticons_bool] += 1
+        else:
+            emoticons_emissions[da][emoticons_bool] = 1
+    else:
+        emoticons_emissions[da][emoticons_bool] = 1
+
+
+def build_question_words_emissions(segment, question_words_emissions):
+    utterance = segment[2]
+    da = segment[3]
+    emoticons_bool = has_question_word(utterance)
+    if da in question_words_emissions:
+        if emoticons_bool in question_words_emissions[da]:
+            question_words_emissions[da][emoticons_bool] += 1
+        else:
+            question_words_emissions[da][emoticons_bool] = 1
+    else:
+        question_words_emissions[da][emoticons_bool] = 1
+
+
+def build_first_verb_emissions(segment, first_verb_emissions):
+    utterance = segment[2]
+    da = segment[3]
+    first_verb = is_first_verb(utterance)
+    if da in first_verb_emissions:
+        if first_verb in first_verb_emissions[da]:
+            first_verb_emissions[da][first_verb] += 1
+        else:
+            first_verb_emissions[da][first_verb] = 1
+    else:
+        first_verb_emissions[da][first_verb] = 1
 
 
 def build_length_utterance_emissions(segment, observations_length, emissions_length):
@@ -121,13 +162,6 @@ def build_root_usersname_emissions(root_username, current_username, segment, da_
             da_root_username_emissions[da][same_username] = 1
     else:
         da_root_username_emissions[da][same_username] = 1
-
-
-def has_link(utterance):
-    if 'http:' in utterance:
-        return True
-    else:
-        return False
 
 
 def build_link_emissions(segment, link_emissions):
