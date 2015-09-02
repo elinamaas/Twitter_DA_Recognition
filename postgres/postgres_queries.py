@@ -50,9 +50,21 @@ def find_not_german_tweets(cursor):
     return results
 
 
+def get_all_da_taxonome(taxonomy, cursor):
+    if taxonomy == 'full':
+        query = 'select dialogue_act_id, dialogue_act_name from dialogue_act_full order by dialogue_act_id asc'
+    elif taxonomy == 'reduced':
+        query = 'select dialogue_act_id, dialogue_act_name from dialogue_act_reduced order by dialogue_act_id asc'
+    else:
+        query = 'select dialogue_act_id, dialogue_act_name from dialogue_act_minimal order by dialogue_act_id asc'
+    cursor.execute(query)
+    results = cursor.fetchall()
+    return results
+
+
 def find_das_for_tweet(tweet_id):
     connection, cursor = postgres_configuration.make_connection()
-    query = 'select da.dialogue_act_name from segmentation as s, dialogue_act as da ' \
+    query = 'select da.dialogue_act_name from segmentation as s, dialogue_act as da' \
             ' where s.tweet_id =' + str(tweet_id) + 'and s.dialogue_act_id = da.dialogue_act_id ' \
                                                    'group by s.dialogue_act_id, da.dialogue_act_name'
 
@@ -72,14 +84,14 @@ def find_da_unigrams(taxonomy, cursor):
                 'order by count(s.dialogue_act_id_full) desc'
     elif taxonomy == 'reduced':
         query = 'select count(s.dialogue_act_id_reduced), da_reduced.dialogue_act_name ' \
-            'from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.reducedOntologyTable + ' as da_reduced' \
-            'where s.dialogue_act_id_reduced = da_reduced.dialogue_act_id ' \
+            ' from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.reducedOntologyTable + ' as da_reduced' \
+            ' where s.dialogue_act_id_reduced = da_reduced.dialogue_act_id ' \
             'group by s.dialogue_act_id_reduced, da_reduced.dialogue_act_name ' \
             'order by count(s.dialogue_act_id_reduced) desc'
     else:
         query = 'select count(s.dialogue_act_id_min), da_min.dialogue_act_name ' \
-            'from ' + postgres_configuration.segmentationTable + 'as s, ' + postgres_configuration.minimalOntologyTable + ' as da_min ' \
-            'where s.dialogue_act_min_full = da_min.dialogue_act_id ' \
+            ' from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.minimalOntologyTable + ' as da_min ' \
+            'where s.dialogue_act_id_min = da_min.dialogue_act_id ' \
             'group by s.dialogue_act_id_min, da_min.dialogue_act_name ' \
             'order by count(s.dialogue_act_id_min) desc'
 
@@ -87,6 +99,52 @@ def find_da_unigrams(taxonomy, cursor):
     results = cursor.fetchall()
     # postgres_configuration.close_connection(connection)
     return results
+
+
+def find_states(taxonomy, cursor):
+    # connection, cursor = postgres_configuration.make_connection()
+    if taxonomy == 'full':
+        query = 'select distinct da_full.dialogue_act_name ' \
+                ' from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.fullOntologyTable + ' as da_full ' \
+                'where s.dialogue_act_id_full = da_full.dialogue_act_id '
+    elif taxonomy == 'reduced':
+        query = 'select distinct da_reduced.dialogue_act_name ' \
+            ' from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.reducedOntologyTable + ' as da_reduced' \
+            ' where s.dialogue_act_id_reduced = da_reduced.dialogue_act_id '
+    else:
+        query = 'select distinct da_min.dialogue_act_name ' \
+            ' from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.minimalOntologyTable + ' as da_min ' \
+            'where s.dialogue_act_id_min = da_min.dialogue_act_id '
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+    used_das = list()
+    for result in results:
+        used_das.append(result[0])
+    return used_das
+
+
+def find_predicted_states(taxonomy, cursor):
+    # connection, cursor = postgres_configuration.make_connection()
+    if taxonomy == 'full':
+        query = 'select distinct da_full.dialogue_act_name ' \
+                ' from ' + postgres_configuration.segmentationPredictionTable + ' as s, ' + postgres_configuration.fullOntologyTable + ' as da_full ' \
+                'where s.dialogue_act_id_full = da_full.dialogue_act_id '
+    elif taxonomy == 'reduced':
+        query = 'select distinct da_reduced.dialogue_act_name ' \
+            ' from ' + postgres_configuration.segmentationPredictionTable + ' as s, ' + postgres_configuration.reducedOntologyTable + ' as da_reduced' \
+            ' where s.dialogue_act_id_reduced = da_reduced.dialogue_act_id '
+    else:
+        query = 'select distinct da_min.dialogue_act_name ' \
+            ' from ' + postgres_configuration.segmentationPredictionTable + ' as s, ' + postgres_configuration.minimalOntologyTable + ' as da_min ' \
+            'where s.dialogue_act_id_min = da_min.dialogue_act_id '
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+    used_das = list()
+    for result in results:
+        used_das.append(result[0])
+    return used_das
 
 
 def find_segments(tweet_id, cursor):
@@ -247,6 +305,33 @@ def find_all_da_occurances_taxonomy(table, da, taxonomy, cursor):
     # postgres_configuration.close_connection(connection)
     return results
 
+
+def find_all_utterance_by_da(table, da, taxonomy, cursor):
+    # connection, cursor = postgres_configuration.make_connection()
+    if taxonomy == 'full':
+        da_id = find_da_by_name(da,'Dialogue_act_full', cursor)
+        query = 'select * from ' + \
+                table + ' where dialogue_act_id_full = ' + str(da_id)
+    elif taxonomy == 'reduced':
+        da_id = find_da_by_name(da,'Dialogue_act_reduced', cursor)
+        query = 'select * from ' + \
+                table + ' where dialogue_act_id_reduced = ' + str(da_id)
+    else:
+        da_id = find_da_by_name(da,'Dialogue_act_minimal', cursor)
+        query = 'select * from ' + \
+                table + ' where dialogue_act_id_min = ' + str(da_id)
+    cursor.execute(query)
+    results = cursor.fetchall()
+    # postgres_configuration.close_connection(connection)
+    return results
+
+
+def get_utterance_da_by_tweet_id(table, id, cursor):
+
+    query = 'select * from ' + table + ' where tweet_id = ' + str(id)
+    cursor.execute(query)
+    results = cursor.fetchone()
+    return results
 
 def update_da_prediction(da_name, tweet_id, start_offset, end_offset, taxonomy, cursor, connection):
     # connection, cursor = postgres_configuration.make_connection()
