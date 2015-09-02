@@ -2,6 +2,7 @@ from __future__ import division
 import numpy as np
 # from sklearn import hmm
 from analysing_GS import features
+import analysing_GS.extract_features
 import analysing_GS.features
 import collections
 from hmmlearn.hmm import MultinomialHMM
@@ -12,14 +13,14 @@ __author__ = 'snownettle'
 def calculate_hmm(training_set, test_set, taxonomy, cursor, connection):
     # unigrams = features.calculate_da_unigrams('full')
     # taxonomy = 'full'
-    unigrams = features.unigrams_training_set(training_set, taxonomy, cursor)
+    unigrams = analysing_GS.features.unigrams_training_set(training_set, taxonomy, cursor)
 
     states = find_states(unigrams) # da labels
     n_states = len(states)
     start_probability = calculate_start_probability(unigrams, states)
     transition_probability = calculate_transition_probability(training_set, states, taxonomy, cursor)
 
-    observations, emissions, observations_product = analysing_GS.features.extract_features(
+    observations, emissions, observations_product = analysing_GS.extract_features.extract_features_training_set(
         training_set, taxonomy, states, cursor)
     emission_probability = calculate_emission_probability(states, observations_product,
                                                           observations, emissions)
@@ -28,7 +29,7 @@ def calculate_hmm(training_set, test_set, taxonomy, cursor, connection):
     model._set_startprob(start_probability)
     model._set_transmat(transition_probability)
     model._set_emissionprob(emission_probability)
-    test_seq, branches = features.extract_features_test_set(test_set, cursor)
+    test_seq, branches = analysing_GS.extract_features.extract_features_test_set(test_set, cursor)
     for i in range(0, len(test_seq), 1):
         path_observation = test_seq[i]
         dialog = decode_test_observations(path_observation, observations_product)
@@ -58,9 +59,11 @@ def decode_test_observations(path_observation, observations_product):
 
 
 def find_states(unigrams):
+    # delete DIT++, root
     states = set()
     for da, count in unigrams.iteritems():
-        states.add(da)
+        if da != 'DIT++ Taxonomy':
+            states.add(da)
     return list(states)
 
 
