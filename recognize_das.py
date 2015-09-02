@@ -3,7 +3,7 @@ from postgres import insert_to_table, postgres_queries, postgres_configuration, 
 from readData import editedAnnotatedData
 from prepare_golden_standard import rebuild_conversations
 from da_recognition import baseline
-from da_recognition import supervised_learning
+from da_recognition import supervised_learning, annotationRule
 from evaluation import da_evaluation
 # from mongoDB import mongoDB_configuration, queries
 # from prepare_golden_standard.annotated_tweets_final import editing_annotated_tweets
@@ -92,6 +92,13 @@ else:
 
 
 # predictions
+taxonomy_list = ['full', 'reduced', 'minimal']
+# for taxonomy in taxonomy_list:
+#     print taxonomy
+#     da_unigrams= postgres_queries.find_da_unigrams(taxonomy, cursor)
+#     for a in da_unigrams:
+#         print str(a[0]) + '\t' + a[1]
+
 print 'Baseline'
 # baseline.assign_inform_da()
 #
@@ -99,19 +106,31 @@ print 'Baseline'
 # da_evaluation.evaluation_taxonomy('full')
 # da_evaluation.evaluation_taxonomy('reduced')
 # da_evaluation.evaluation_taxonomy('min')
-
 print 'Supervised learning: HMM'
-print 'Full Taxonomy'
-supervised_learning.hmm_utterance_length('full', cursor, connection)
-da_evaluation.evaluation_taxonomy_da('full', cursor)
-da_evaluation.overall_evaluation('full', cursor)
-print 'Reduced taxonomy'
-supervised_learning.hmm_utterance_length('reduced', cursor, connection)
-da_evaluation.evaluation_taxonomy_da('reduced', cursor)
-da_evaluation.overall_evaluation('reduced', cursor)
-print 'Minimal Taxonomy'
-supervised_learning.hmm_utterance_length('minimal', cursor, connection)
-da_evaluation.evaluation_taxonomy_da('minimal', cursor)
-da_evaluation.overall_evaluation('minimal', cursor)
+for taxonomy in taxonomy_list:
+    print taxonomy + ' Taxonomy'
+    supervised_learning.hmm_algorithm(taxonomy, cursor, connection)
+    annotationRule.assign_zero_da(taxonomy, cursor, connection)
+    if taxonomy == 'full':
+        annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+    if taxonomy != 'full':
+        annotationRule.assign_social_da(taxonomy, cursor, connection)
+        annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    da_evaluation.overall_evaluation(taxonomy, cursor)
+# print 'Reduced taxonomy'
+# supervised_learning.hmm_algorithm('reduced', cursor, connection)
+# annotationRule.assign_zero_da('reduced', cursor, connection)
+# annotationRule.assign_social_da('reduced', cursor, connection)
+# annotationRule.assign_it_is_da('reduced', cursor, connection)
+# da_evaluation.evaluation_taxonomy_da('reduced', cursor)
+# da_evaluation.overall_evaluation('reduced', cursor)
+# print 'Minimal Taxonomy'
+# supervised_learning.hmm_algorithm('minimal', cursor, connection)
+# annotationRule.assign_zero_da('minimal', cursor, connection)
+# annotationRule.assign_social_da('minimal', cursor, connection)
+# annotationRule.assign_it_is_da('minimal', cursor, connection)
+# da_evaluation.evaluation_taxonomy_da('minimal', cursor)
+# da_evaluation.overall_evaluation('minimal', cursor)
 
 postgres_configuration.close_connection(connection)
