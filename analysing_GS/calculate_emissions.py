@@ -1,6 +1,8 @@
 import numpy as np
 
-from analysing_GS.features import is_link, has_emoticons, has_question_word, is_first_verb
+from learning.feature import Feature
+from analysing_GS.features import is_link
+# from learning.feature import is_first_verb, is_link, has_emoticons, has_question_word
 import emoticons
 
 __author__ = 'snownettle'
@@ -25,7 +27,7 @@ def build_hashtag_emissions(segment, hashtag_emissions):
 def build_emoticons_emissions(segment, emoticons_emissions):
     utterance = segment[2]
     da = segment[3]
-    emoticons_bool = has_emoticons(utterance)
+    emoticons_bool = Feature.has_emoticons(utterance)
     if da in emoticons_emissions:
         if emoticons_bool in emoticons_emissions[da]:
             emoticons_emissions[da][emoticons_bool] += 1
@@ -38,7 +40,7 @@ def build_emoticons_emissions(segment, emoticons_emissions):
 def build_question_words_emissions(segment, question_words_emissions):
     utterance = segment[2]
     da = segment[3]
-    emoticons_bool = has_question_word(utterance)
+    emoticons_bool = Feature.has_question_word(utterance)
     if da in question_words_emissions:
         if emoticons_bool in question_words_emissions[da]:
             question_words_emissions[da][emoticons_bool] += 1
@@ -51,7 +53,7 @@ def build_question_words_emissions(segment, question_words_emissions):
 def build_first_verb_emissions(segment, first_verb_emissions):
     utterance = segment[2]
     da = segment[3]
-    first_verb = is_first_verb(utterance)
+    first_verb = Feature.is_first_verb(utterance)
     if da in first_verb_emissions:
         if first_verb in first_verb_emissions[da]:
             first_verb_emissions[da][first_verb] += 1
@@ -100,6 +102,24 @@ def calculate_emission_probability_feature(emissions, states, observations):
     return emission_probability
 
 
+def calculate_emission_probability_feature_new(emissions, states, feature_list):
+    for i in range(0, len(states), 1):
+        occurancy = emissions[states[i]]
+        total_number = sum(occurancy.values())
+        probabilities = list()
+        for j in range(0, len(feature_list), 1):
+            if j in occurancy:
+                pr = occurancy[j]/float(total_number)
+                probabilities.append(pr)
+            else:
+                probabilities.append(0)
+        if i == 0:
+            emission_probability = np.array(probabilities)
+        else:
+            emission_probability = np.vstack((emission_probability, probabilities))
+    return emission_probability
+
+
 def build_segment_position_emissions(segment_position_first, segment, segment_position_first_emissions):
     da = segment[3]
     if da in segment_position_first_emissions:
@@ -112,7 +132,7 @@ def build_segment_position_emissions(segment_position_first, segment, segment_po
         segment_position_first_emissions[da][segment_position_first] = 1
 
 
-def build_explanation_mark_emissions(segment, explanation_mark_emissions):
+def build_exclamation_mark_emissions(segment, explanation_mark_emissions):
     utterance = segment[2]
     da = segment[3]
     if '!' in utterance:
@@ -162,6 +182,17 @@ def build_root_usersname_emissions(root_username, current_username, segment, da_
             da_root_username_emissions[da][same_username] = 1
     else:
         da_root_username_emissions[da][same_username] = 1
+
+
+def build_emissions(feature_index, da, emissions):
+    if da in emissions:
+        if feature_index in emissions[da]:
+            emissions[da][feature_index] += 1
+        else:
+            emissions[da][feature_index] = 1
+    else:
+        emissions[da][feature_index] = 1
+
 
 
 def build_link_emissions(segment, link_emissions):

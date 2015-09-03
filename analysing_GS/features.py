@@ -1,15 +1,16 @@
 import collections
 import re
-
-import numpy as np
-import nltk
-import emoticons, question_words
-from postgres import postgres_queries
-from pattern.de import conjugate
-from pattern.de import parse, split, INFINITIVE
 import math
 import operator
 import copy
+
+import numpy as np
+import nltk
+
+# from learning.feature import has_link
+from postgres import postgres_queries
+from pattern.de import conjugate
+from pattern.de import parse, split, INFINITIVE
 
 __author__ = 'snownettle'
 
@@ -215,10 +216,10 @@ def calculate_da_lang_model_unigrams(taxonomy):
 def unigrams_training_set(training_set, taxonomy, cursor):
     number_start_symbol = len(training_set)
     unigrams = dict()
-    unigrams['<S>'] = number_start_symbol
-    end_symbol = '<E>'
-    number_end_symbols = postgres_queries.count_end_conversation(cursor)
-    unigrams[end_symbol] = number_end_symbols
+    # unigrams['<S>'] = number_start_symbol
+    # end_symbol = '<E>'
+    # number_end_symbols = postgres_queries.count_end_conversation(cursor)
+    # unigrams[end_symbol] = number_end_symbols
     for conversation in training_set:
         all_nodes = conversation.all_nodes()
         for node in all_nodes:
@@ -300,7 +301,7 @@ def fetch_da_taxonomy(segment, taxonomy):
     return da
 
 
-def term_frequency(segment, tf_features, observation_tokens):
+def term_frequency_inversce_doc(segment, tf_features, idf_features, observation_tokens):
     da = segment[3]
     utterance = segment[2]
     if '@' in utterance:
@@ -317,12 +318,16 @@ def term_frequency(segment, tf_features, observation_tokens):
                 observation_tokens.add(lemma)
                 if da in tf_features:
                     tf = tf_features[da]
+                    idf_features[da].add(lemma)
                     if lemma in tf:
                         tf[lemma] += 1
                     else:
                         tf[lemma] = 1
                 else:
                     tf_features[da][lemma] = 1
+                    t = set()
+                    t.add(lemma)
+                    idf_features[da] = t
 
 
 def calculate_tf(tf_features):
@@ -355,43 +360,18 @@ def inverse_document_frequency(segment, idf_features):
                     idf_features[da] = t
 
 
-def is_first_verb(segment):
-    utterance = str(segment)
-    if '@' in utterance:
-        utterance = delete_username(utterance)
-    utterance = delete_conjuction(utterance)
-    sentences = parse(utterance, relations=True, lemmata=True).split()
-    pos_list = ['VB', 'VBP', 'VBZ', 'VBG', 'VBD', 'BN']
-    if len(sentences) != 0:
-        if len(sentences[0]) != 0:
-            pos = sentences[0][0][1]
-            if pos in pos_list:
-                return True
-    return False
-
-
-def calculate_tfidf(tf):
+def calculate_tfidf(tf_features, idf_features):
     tfidf = collections.defaultdict(dict)
-    idf = tf.copy()
-    das_list = idf.keys()
-    for da, tf_value in tf.iteritems():
-        number_of_terms = sum(tf_value.values())
-        for token, value in tf_value.iteritems():
+    idf_keys = idf_features.values()
+    das_list = idf_features.keys()
+    for da, term_freq in tf_features.iteritems():
+        for token, freq in term_freq.iteritems():
             nt = 0
-            for key in das_list:
-                token_list = idf[key]
-                if token in token_list:
+            for idf in idf_keys:
+                if token in idf:
                     nt += 1
-            tfidf[da][token] = value/float(number_of_terms)*math.log10(len(das_list)/float(nt))
+            tfidf[da][token] = freq * math.log10(len(das_list)/float(nt))
     return tfidf
-
-
-
-# def calculate_idf(number_of_segments, idf_features):
-#     idf = dict()
-#     for token, freq in idf_features.iteritems():
-#         idf[token] = math.log10(number_of_segments/float(freq))
-#     return idf
 
 
 def delete_non_alphabetic_symbols(token):
@@ -472,12 +452,12 @@ def tf_normalization(terms_frequency):
 #     return emission_probability
 
 
-def token_observations(observations):
-    token_obs = list()
-    for token in observations:
-        obs = [False, True]
-        token_obs.append(obs)
-    return token_obs
+# def token_observations(observations):
+#     token_obs = list()
+#     for token in observations:
+#         obs = [False, True]
+#         token_obs.append(obs)
+#     return token_obs
 
 
 def calculate_emissions_unigrams(token_observations, token_observations_boolean, tf, states):
@@ -513,13 +493,6 @@ def calculate_emissions_unigrams(token_observations, token_observations_boolean,
     return emissions_list
 
 
-def is_link(utterance):
-    if 'http:' in utterance:
-        return 1
-    else:
-        return 0
-
-
 def is_username(token):
     if '@' in token:
         return 1
@@ -531,45 +504,6 @@ def has_numbers(input_string):
     return bool(re.search(r'\d', input_string))
 
 
-def has_question_mark(utterance):
-    return '?' in utterance
-
-
-def has_explanation_mark(utterance):
-    return '!' in utterance
-
-
-def has_hashtag(utterance):
-    return '#' in utterance
-
-
-def has_link(utterance):
-    if 'http:' in utterance:
-        return True
-    else:
-        return False
-
-
-def has_emoticons(utterance):
-    emoticons_list = emoticons.emoticons_lib()
-    for emoticon in emoticons_list:
-            if emoticon in utterance and 'http:' not in utterance:
-                return True
-    return False
-
-
-def has_question_word(utterance):
-    utterance = str(utterance)
-    question_words_list = question_words.german_question_words()
-    utterance = delete_conjuction(utterance)
-    for qw in question_words_list:
-        # delete first conjuction: und, aber, oder
-
-        if utterance.startswith(qw):
-            return True
-    return False
-
-
 def delete_conjuction(utterance):
     conjuction_list = ['und', 'oder', 'aber']
     utterance = utterance.lower()
@@ -579,20 +513,22 @@ def delete_conjuction(utterance):
     else:
         return utterance
 
+
 def choose_word_features(tfidf):
     words_set = set()
     for da, tfidf_value in tfidf.iteritems():
         sorted_x = sorted(tfidf_value.items(), key=operator.itemgetter(1))
         sorted_x.reverse()
         # leave top 5
-        if len(sorted_x) > 1:
-            for i in range(0, 1, 1):
-                words_set.add(sorted_x[i][0])
-        else:
-            for tf in sorted_x:
+        i = 0
+        for tf in sorted_x:
+            if i == 10:
+                break
+            else:
                 words_set.add(tf[0])
+            i += 1
     words_list = list(words_set)
-    return words_list[:-40]
+    return words_list
 
 
 def delete_tokens(tf_features, observation_tokens):
@@ -602,3 +538,17 @@ def delete_tokens(tf_features, observation_tokens):
             if token not in observation_tokens:
                 del new_tf_features[da][token]
     return new_tf_features
+
+
+def is_link(utterance):
+    if 'http:' in utterance:
+        return 1
+    else:
+        return 0
+
+
+def has_link(utterance):
+    if 'http:' in utterance:
+        return True
+    else:
+        return False

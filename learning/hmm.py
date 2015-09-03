@@ -20,43 +20,61 @@ def calculate_hmm(training_set, test_set, taxonomy, cursor, connection):
     start_probability = calculate_start_probability(unigrams, states)
     transition_probability = calculate_transition_probability(training_set, states, taxonomy, cursor)
 
-    observations, emissions, observations_product = analysing_GS.extract_features.extract_features_training_set(
+    language_features, feature_list, emissions = analysing_GS.extract_features.extract_features_training_set(
         training_set, taxonomy, states, cursor)
-    emission_probability = calculate_emission_probability(states, observations_product,
-                                                          observations, emissions)
+
+    # emission_probability = calculate_emission_probability(states, observations_product,
+    #                                                       observations, emissions)
 
     model = MultinomialHMM(n_components=n_states)
     model._set_startprob(start_probability)
     model._set_transmat(transition_probability)
-    model._set_emissionprob(emission_probability)
-    test_seq, branches = analysing_GS.extract_features.extract_features_test_set(test_set, cursor)
+    test_seq, branches = analysing_GS.extract_features.extract_features_test_set(test_set, language_features, cursor)
+    extracted_feature_test_set = list()
     for i in range(0, len(test_seq), 1):
         path_observation = test_seq[i]
-        dialog = decode_test_observations(path_observation, observations_product)
-        logprob, alice_hears = model.decode(dialog, algorithm="viterbi")
+        extraction, emissions = decode_test_observations(path_observation, feature_list, emissions)
+        extracted_feature_test_set.append(extraction)
+
+    model._set_emissionprob(emissions)
+    for i in range(0, len(extracted_feature_test_set), 1):
+        path_observation = extracted_feature_test_set[i]
+        # dialog = decode_test_observations(path_observation, feature_list, emissions)
+        logprob, alice_hears = model.decode(path_observation, algorithm="viterbi")
         # i = 0
         for j in range(0, len(alice_hears), 1):
             dialog_act_id = alice_hears[j]
         # for dialog_act_id in alice_hears:
             dialog_act_name = states[dialog_act_id]
+            # print dialog_act_name
             segment = branches[i][j]
             tweet_id = str(segment[0])
             postgres_queries.update_da_prediction(dialog_act_name, tweet_id, segment[1], segment[2],
                                                   taxonomy, cursor, connection)
+
+
             # i += 1
         #print "Alice hears:", ", ".join(map(lambda x: states[x], alice_hears))
     # print "Bob says:", ", ".join(map(lambda x: str(observations[x]), bob_says))
 
 
-def decode_test_observations(path_observation, observations_product):
+def decode_test_observations(path_observation, feature_list, emissions):
     #check if smth doenst exixst!
     decode_observations = list()
     for observation in path_observation:
-        obs = tuple(observation)
-        index = observations_product.index(obs)
-        decode_observations.append(index)
-    return decode_observations
+        feature_index = observation.contains_in_list(feature_list)
+        if feature_index is None:
+            emissions = update_emissions(emissions)
+            feature_list.append(observation)
+            decode_observations.append(len(feature_list) - 1)
+        else:
+            decode_observations.append(feature_index)
+    return decode_observations, emissions
 
+
+def update_emissions(emissions):
+    new_emissions = np.hstack((emissions, np.zeros((emissions.shape[0], 1), dtype=emissions.dtype)))
+    return new_emissions
 
 def find_states(unigrams):
     # delete DIT++, root

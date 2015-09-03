@@ -110,14 +110,14 @@ print 'Supervised learning: HMM'
 for taxonomy in taxonomy_list:
     print taxonomy + ' Taxonomy'
     supervised_learning.hmm_algorithm(taxonomy, cursor, connection)
-    annotationRule.assign_zero_da(taxonomy, cursor, connection)
-    if taxonomy == 'full':
-        annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
-    if taxonomy != 'full':
-        annotationRule.assign_social_da(taxonomy, cursor, connection)
-        annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+    # annotationRule.assign_zero_da(taxonomy, cursor, connection)
+    # if taxonomy == 'full':
+    #     annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+    # if taxonomy != 'full':
+    #     annotationRule.assign_social_da(taxonomy, cursor, connection)
+    #     annotationRule.assign_it_is_da(taxonomy, cursor, connection)
     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
-    da_evaluation.overall_evaluation(taxonomy, cursor)
+    # da_evaluation.overall_evaluation(taxonomy, cursor)
 # print 'Reduced taxonomy'
 # supervised_learning.hmm_algorithm('reduced', cursor, connection)
 # annotationRule.assign_zero_da('reduced', cursor, connection)
