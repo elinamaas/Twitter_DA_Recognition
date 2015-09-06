@@ -1,13 +1,13 @@
 __author__ = 'snownettle'
 from postgres import insert_to_table, postgres_queries, postgres_configuration, update_table
 from readData import editedAnnotatedData
-from prepare_golden_standard import rebuild_conversations
+from prepare_gold_standard import rebuild_conversations
 from da_recognition import baseline
 from da_recognition import supervised_learning, annotationRule
 from evaluation import da_evaluation
 # from mongoDB import mongoDB_configuration, queries
-# from prepare_golden_standard.annotated_tweets_final import editing_annotated_tweets
-# from prepare_golden_standard import insert_to_postgres
+# from prepare_gold_standard.annotated_tweets_final import editing_annotated_tweets
+# from prepare_gold_standard import insert_to_postgres
 #
 
 # database = 'DARecognition'
@@ -106,31 +106,61 @@ print 'Baseline'
 # da_evaluation.evaluation_taxonomy('full')
 # da_evaluation.evaluation_taxonomy('reduced')
 # da_evaluation.evaluation_taxonomy('min')
+# da_evaluation.inter_annotation_agreement('full', cursor)
+# da_evaluation.inter_annotation_agreement('reduced', cursor)
+# da_evaluation.inter_annotation_agreement('minimal', cursor)
+# da_evaluation.confusion_matrix('minimal', cursor)
+
+# supervised_learning.conditional_random_fields('minimal', cursor, connection)
+# da_evaluation.evaluation_taxonomy_da('minimal', cursor)
+# da_evaluation.inter_annotation_agreement('minimal', cursor)
+# da_evaluation.confusion_matrix('minimal', cursor)
+
 print 'Supervised learning: HMM'
 for taxonomy in taxonomy_list:
     print taxonomy + ' Taxonomy'
     supervised_learning.hmm_algorithm(taxonomy, cursor, connection)
-    # annotationRule.assign_zero_da(taxonomy, cursor, connection)
-    # if taxonomy == 'full':
-    #     annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
-    # if taxonomy != 'full':
-    #     annotationRule.assign_social_da(taxonomy, cursor, connection)
-    #     annotationRule.assign_it_is_da(taxonomy, cursor, connection)
     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    da_evaluation.confusion_matrix(taxonomy, cursor)
     # da_evaluation.overall_evaluation(taxonomy, cursor)
-# print 'Reduced taxonomy'
-# supervised_learning.hmm_algorithm('reduced', cursor, connection)
-# annotationRule.assign_zero_da('reduced', cursor, connection)
-# annotationRule.assign_social_da('reduced', cursor, connection)
-# annotationRule.assign_it_is_da('reduced', cursor, connection)
-# da_evaluation.evaluation_taxonomy_da('reduced', cursor)
-# da_evaluation.overall_evaluation('reduced', cursor)
-# print 'Minimal Taxonomy'
-# supervised_learning.hmm_algorithm('minimal', cursor, connection)
-# annotationRule.assign_zero_da('minimal', cursor, connection)
-# annotationRule.assign_social_da('minimal', cursor, connection)
-# annotationRule.assign_it_is_da('minimal', cursor, connection)
-# da_evaluation.evaluation_taxonomy_da('minimal', cursor)
-# da_evaluation.overall_evaluation('minimal', cursor)
+
+print '#############################################################'
+print 'With Rules'
+for taxonomy in taxonomy_list:
+    print taxonomy + ' Taxonomy'
+    annotationRule.assign_zero_da(taxonomy, cursor, connection)
+    if taxonomy == 'full':
+        annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+    if taxonomy != 'full':
+        annotationRule.assign_social_da(taxonomy, cursor, connection)
+        annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    da_evaluation.confusion_matrix(taxonomy, cursor)
+
+
+print 'Supervised learning: CRF'
+for taxonomy in taxonomy_list:
+    print taxonomy + ' Taxonomy'
+    supervised_learning.conditional_random_fields(taxonomy, cursor, connection)
+    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    da_evaluation.confusion_matrix(taxonomy, cursor)
+    # da_evaluation.overall_evaluation(taxonomy, cursor)
+
+print '#############################################################'
+print 'With Rules'
+for taxonomy in taxonomy_list:
+    print taxonomy + ' Taxonomy'
+    annotationRule.assign_zero_da(taxonomy, cursor, connection)
+    if taxonomy == 'full':
+        annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+    if taxonomy != 'full':
+        annotationRule.assign_social_da(taxonomy, cursor, connection)
+        annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    da_evaluation.confusion_matrix(taxonomy, cursor)
 
 postgres_configuration.close_connection(connection)
