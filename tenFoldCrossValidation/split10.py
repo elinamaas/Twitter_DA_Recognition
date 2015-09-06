@@ -1,6 +1,6 @@
 __author__ = 'snownettle'
 
-from prepare_golden_standard import rebuild_conversations
+from prepare_gold_standard import rebuild_conversations
 
 def fold_splitter(cursor):
     # Break data set into 10 pieces: n/10, where n ist the number of conversations

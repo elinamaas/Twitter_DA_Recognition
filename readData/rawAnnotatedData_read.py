@@ -6,7 +6,7 @@ import os
 import csv
 import xlrd
 import re
-from prepare_golden_standard import annotated_tweet_class, write_to
+from prepare_gold_standard import annotated_tweet_class, write_to
 from postgres import insert_to_table, postgres_queries, postgres_configuration
 from mongoDB import importData
 from da_recognition import matching_schema

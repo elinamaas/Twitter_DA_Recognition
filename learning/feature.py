@@ -4,6 +4,7 @@ import re
 
 __author__ = 'snownettle'
 
+
 class Feature:
     """
         In this Class is described features that are int the utterance

@@ -10,6 +10,7 @@ from postgres import postgres_queries
 __author__ = 'snownettle'
 #hidden markov model
 
+
 def calculate_hmm(training_set, test_set, taxonomy, cursor, connection):
     # unigrams = features.calculate_da_unigrams('full')
     # taxonomy = 'full'

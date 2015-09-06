@@ -3,7 +3,7 @@ __author__ = 'snownettle'
 from mongoDB import mongoDBQueries, mongoDB_configuration
 from treelib import Tree
 from postgres import postgres_queries
-from prepare_golden_standard import rebuild_conversations
+from prepare_gold_standard import rebuild_conversations
 
 
 def number_of_annotated_tweet(list_of_tweets):
