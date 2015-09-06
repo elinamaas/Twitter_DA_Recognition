@@ -6,7 +6,7 @@ from tabulate import tabulate
 import operator
 
 from mongoDB import mongoDBQueries
-from prepare_golden_standard.annotated_tweet_class import AnnotatedTweetEdit
+from prepare_gold_standard.annotated_tweet_class import AnnotatedTweetEdit
 from da_recognition.dialogue_acts_taxonomy import find_common_parent, check_related_tags
 
 

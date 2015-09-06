@@ -1,13 +1,13 @@
 __author__ = 'snownettle'
 
 import os.path
-from prepare_golden_standard.editing_annotated_tweets import tweets_to_be_reviewed, majority_vote, \
+from prepare_gold_standard.editing_annotated_tweets import tweets_to_be_reviewed, majority_vote, \
     rewrite_segmentation, merge_da_children, numbers_of_tweets_agreed_by_three
 from da_recognition.dialogue_acts_taxonomy import build_da_taxonomy_full
-from prepare_golden_standard.write_to import write_to_xlsx_file
-from prepare_golden_standard import inter_annotater_agreement
+from prepare_gold_standard.write_to import write_to_xlsx_file
+from prepare_gold_standard import inter_annotater_agreement
 from statistics import annotatedData_stat
-from prepare_golden_standard.rebuild_conversations import delete_non_german_tweets_from_conversation, \
+from prepare_gold_standard.rebuild_conversations import delete_non_german_tweets_from_conversation, \
     conversation_regarding_language
 from postgres import postgres_queries
 
