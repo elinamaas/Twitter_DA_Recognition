@@ -1,8 +1,9 @@
 __author__ = 'snownettle'
-from postgres import postgres_queries
-from da_recognition import dialogue_acts_taxonomy
+from postgres import postgres_queries, postgres_configuration
 from tabulate import tabulate
 from operator import itemgetter
+import math
+import nltk
 
 
 def evaluation_taxonomy_da(taxonomy_name, cursor):
@@ -111,3 +112,65 @@ def overall_evaluation(evaluation_dict):
     da_evaluation = ['Micro-average Method', micro_pr, micro_re, micro_f1]
     evaluation_data.append(da_evaluation)
     return evaluation_data
+
+
+def inter_annotation_agreement(taxonomy, cursor):
+    joined_tables = postgres_queries.join_tables(taxonomy, cursor)
+    i_number = len(joined_tables)
+    arg_i = 0
+    sum_nc1k_nc2k = 0
+    nc1k = dict() # gold standard
+    nc2k = dict() # predictions
+    sum_n_k_square = 0
+    for result in joined_tables:
+        if result[0] == result[1]:
+            arg_i += 1
+        if result[0] in nc1k:
+            nc1k[result[0]] += 1
+        else:
+            nc1k[result[0]] = 1
+            if result[0] not in nc2k:
+                nc2k[result[0]] = 0
+        if result[1] in nc2k:
+            nc2k[result[1]] += 1
+        else:
+            nc2k[result[1]] = 1
+    for da, value in nc1k.iteritems():
+        sum_nc1k_nc2k += value * nc2k[da]
+        sum_n_k_square += math.pow((value + nc2k[da]), 2)
+
+    a_o = 1/float(i_number)*arg_i # observed agreement
+    a_k_e = 1/float(math.pow(i_number, 2)) * sum_nc1k_nc2k
+    k = (a_o - a_k_e)/float(1-a_k_e)
+    a_pi_e = 1/4*float(math.pow(i_number, 2)) * sum_n_k_square
+    pi = (a_o - a_pi_e)/float(1-a_pi_e)
+    print 'Individual Coder Distribution k = ' + str(k)
+    print 'A Single Distribution pi = ' + str(pi)
+
+
+def confusion_matrix(taxonomy, cursor):
+    gold = list()
+    test = list()
+    joined_tables = postgres_queries.join_tables(taxonomy, cursor)
+    for result in joined_tables:
+        if taxonomy == 'full':
+            da_gold = postgres_queries.find_da_by_id(result[0], postgres_configuration.fullOntologyTable, cursor)
+            da_test = postgres_queries.find_da_by_id(result[1], postgres_configuration.fullOntologyTable, cursor)
+        elif taxonomy == 'reduced':
+            da_gold = postgres_queries.find_da_by_id(result[0], postgres_configuration.reducedOntologyTable, cursor)
+            da_test = postgres_queries.find_da_by_id(result[1], postgres_configuration.reducedOntologyTable, cursor)
+        else:
+            da_gold = postgres_queries.find_da_by_id(result[0], postgres_configuration.reducedOntologyTable, cursor)
+            da_test = postgres_queries.find_da_by_id(result[1], postgres_configuration.reducedOntologyTable, cursor)
+        gold.append(da_gold)
+        test.append(da_test)
+    cm = nltk.ConfusionMatrix(gold, test)
+    print 'Confusion matrix'
+    print(cm.pp(sort_by_count=True, show_percents=True, truncate=9))
+
+
+
+
+
+
+
