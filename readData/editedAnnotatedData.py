@@ -5,7 +5,8 @@ from twitter_objects.tweet import AnnotatedTweetFinal
 from postgres import insert_to_table
 import xlrd
 
-def import_golden_standard_postgres(filename):
+
+def import_golden_standard_postgres(filename, cursor, connection):
     list_of_tweets_to_be_inserted = list()
     tweets_id = set()
     workbook = xlrd.open_workbook(filename)
@@ -37,7 +38,7 @@ def import_golden_standard_postgres(filename):
             token = worksheet.cell_value(curr_row, 1)
             da = worksheet.cell_value(curr_row, 2)
             tweet.set_tokens(offset, token, da)
-    insert_to_table.multiple_tweets_insert(list_of_tweets_to_be_inserted)
+    insert_to_table.multiple_tweets_insert(list_of_tweets_to_be_inserted, cursor, connection)
     return list_of_tweets_to_be_inserted
 # import_golden_standard_postgres('../tokenisierung-tofix.xlsx')
 # test = 'jfjudj\''

@@ -10,6 +10,7 @@ __author__ = 'snownettle'
 
 def run_crf(train_set, test_set, taxonomy, cursor, connection):
     tokens = extract_language_features(train_set, taxonomy, cursor)
+
     train_data, train_branches = extract_data(train_set, tokens, taxonomy, cursor)
     X_train = [utterance2features(s, tokens) for s in train_data]
     y_train = [utterance2labels(s) for s in train_data]
@@ -43,7 +44,10 @@ def run_crf(train_set, test_set, taxonomy, cursor, connection):
                                                   taxonomy, cursor, connection)
 
             i += 1
-    # print(bio_classification_report(y_test, y_pred))
+    # y_test_test = list()
+    # for a in y_test:
+    #     y_test_test.append(a[0])
+    # print(bio_classification_report(y_test_test, y_pred))
 
 
 def extract_data(train_set, tokens, taxonomy, cursor): # tuple (utterance, user, pos,  DA_id)
@@ -85,17 +89,17 @@ def word2features(utterance, tokens):
     pos = utterance[5]
     feature = Feature(utterance_string, start_offset, end_offset, root_user, current_user, pos, tokens)
     features = [
-        'length=%s' % feature.feature['length'],
-        'pos=%s' % feature.feature['pos'],
-        'root_user=%s' % feature.feature['root_user'],
-        'link=%s' % feature.feature['link'],
-        'question_mark=%s' % feature.feature['question_mark'],
-        'exclamation_mark=%s' % feature.feature['exclamation_mark'],
-        'hashtag=%s' % feature.feature['hashtag'],
-        'emoticons=%s' % feature.feature['emoticons'],
-        'question_words=%s' % feature.feature['question_words'],
-        'first_verb=%s' % feature.feature['first_verb'],
-        'lang_features=%s' % feature.feature['language_features']
+        'length=%s' % feature.features['length'],
+        'pos=%s' % feature.features['pos'],
+        'root_user=%s' % feature.features['root_user'],
+        'link=%s' % feature.features['link'],
+        'question_mark=%s' % feature.features['question_mark'],
+        'exclamation_mark=%s' % feature.features['exclamation_mark'],
+        'hashtag=%s' % feature.features['hashtag'],
+        'emoticons=%s' % feature.features['emoticons'],
+        'question_words=%s' % feature.features['question_words'],
+        'first_verb=%s' % feature.features['first_verb'],
+        'lang_features=%s' % feature.features['language_features']
     ]
 
     return features

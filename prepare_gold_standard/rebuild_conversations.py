@@ -123,24 +123,24 @@ def build_conversation_from_mongo(collection_name):
     return conversation_list
 
 
-def delete_non_german_tweets():
-    tweets_in_conversation, conversation_list = build_german_conversation()
-    tweets = postgres_queries.find_all_tweets()
+def delete_non_german_tweets(cursor, connection):
+    tweets_in_conversation, conversation_list = build_german_conversation(cursor)
+    tweets = postgres_queries.find_all_tweets(cursor)
     delete_list = list()
     for tweet in tweets:
         if int(tweet[0]) not in tweets_in_conversation:
             delete_list.append(int(tweet[0]))
-    postgres_queries.delete_non_german_tweets(delete_list)
+    postgres_queries.delete_non_german_tweets(delete_list, cursor, connection)
     return tweets_in_conversation
 
 
-def build_german_conversation():
-    conversation_amount = postgres_queries.find_annotated_conversation_number()
+def build_german_conversation(cursor):
+    conversation_amount = postgres_queries.find_annotated_conversation_number(cursor)
     conversation_list = list()
     tweets_in_conversation = list()
     for i in range(0, conversation_amount + 1, 1):
         conversation_tree = Tree()
-        conversation = postgres_queries.find_conversation(i)
+        conversation = postgres_queries.find_conversation(i, cursor)
         # test_i += len(conversation)
         for tweet in conversation:
             if tweet[2] is None and tweet[6] is True:

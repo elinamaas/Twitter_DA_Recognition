@@ -522,7 +522,7 @@ def choose_word_features(tfidf):
         # leave top 5
         i = 0
         for tf in sorted_x:
-            if i == 10:
+            if i == 100:
                 break
             else:
                 words_set.add(tf[0])

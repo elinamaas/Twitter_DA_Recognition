@@ -12,6 +12,7 @@ from postgres.postgres_queries import count_start_conversation, count_end_conver
 from learning.feature import Feature
 import features
 import gc
+from pattern.de import parse, split, INFINITIVE
 
 __author__ = 'snownettle'
 
@@ -51,6 +52,7 @@ def extract_features_test_set(data_set, language_features, cursor):
 def extract_features_training_set(training_set, taxonomy, states, cursor):
 
     language_features = extract_language_features(training_set, taxonomy, cursor)
+    # language_features = list()
     number_of_segments = 0
     feature_list = list()
     emissions = collections.defaultdict(dict)
@@ -100,3 +102,30 @@ def extract_language_features(training_set, taxonomy, cursor):
     tfidf = features.calculate_tfidf(tf_features, idf_features)
     observation_tokens = features.choose_word_features(tfidf)
     return observation_tokens
+
+# def extract_language_features(training_set, taxonomy, cursor):
+#     list_of_word = set()
+#     utterance_list = ''
+#     for conversation in training_set:
+#         all_nodes = conversation.all_nodes()
+#         for node in all_nodes:
+#             tweet_id = node.tag
+#             segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy, cursor)
+#             for i in range(0, len(segments), 1):
+#                 utterance = segments[i][2]
+#                 if '@' in utterance:
+#                     utterance = Feature.delete_username(utterance)
+#                 if Feature.has_link(utterance):
+#                     utterance = Feature.delete_link(utterance)
+#                 if Feature.has_link(utterance):
+#                     utterance = Feature.delete_hashtag(utterance)
+#                 utterance = Feature.delete_non_alphabetic_symbols(utterance)
+#                 if len(utterance) != 0:
+#                     utterance_list += utterance + '. '
+#     sentences = parse(utterance_list, relations=True, lemmata=True).split()
+#     for sentence in sentences:
+#         for token in sentence:
+#             if len(token[0]) > 1:
+#                 list_of_word.add(token[0])
+#     list_of_word = list(list_of_word)
+#     return list_of_word

@@ -1,6 +1,8 @@
 from analysing_GS import emoticons, question_words
 from pattern.de import parse, split, INFINITIVE
 import re
+from learning import words2vec
+import numpy as np
 
 __author__ = 'snownettle'
 
@@ -16,11 +18,12 @@ class Feature:
 
     """
         #
-    def __init__(self, utterance, start_offset, end_offset, root_username, current_username, pos, tokens):
-        self.feature = dict()
-        self.extract_features(utterance, start_offset, end_offset, root_username, current_username, pos, tokens)
+    def __init__(self, utterance, start_offset, end_offset, root_username, current_username, pos, language_features):
+        self.features = dict()
+        # self.word2vec = list()
+        self.extract_features(utterance, start_offset, end_offset, root_username, current_username, pos, language_features)
 
-    def extract_features(self, utterance, start_offset, end_offset, root_username, current_username, pos, tokens):
+    def extract_features(self, utterance, start_offset, end_offset, root_username, current_username, pos, language_features):
         utterance = utterance.lower()
         length = self.utterance_length(start_offset, end_offset)
         root_user = self.has_root_username(root_username, current_username)
@@ -31,14 +34,18 @@ class Feature:
         emoticons = self.has_emoticons(utterance)
         question_words = self.has_question_word(utterance)
         first_verb = self.is_first_verb(utterance)
-        lang_features = self.extract_lang_features(tokens, utterance)
-        self.feature = {'length' : length, 'root_user': root_user, 'pos': pos,
+        lang_features = self.extract_lang_features(utterance, language_features)
+        self.features = {'length' : length, 'root_user': root_user, 'pos': pos,
                         'link': link, 'question_mark': question_mark, 'exclamation_mark': exclamation_mark,
                         'hashtag': hashtag, 'emoticons': emoticons, 'question_words': question_words,
                         'first_verb': first_verb, 'language_features': lang_features}
 
     def compare(self, existing_feature):
-        return self.feature == existing_feature.feature
+        # if self.features == existing_feature.features:
+        #     return np.array_equal(self.word2vec, existing_feature.word2vec)
+        # else:
+        #     return False
+        return self.features == existing_feature.features
 
     def add_new_feature(self, feature_list):
         do_not_add = False
@@ -60,8 +67,10 @@ class Feature:
                 return i
         return None
 
-    def extract_lang_features(self, tokens, utterance):
+    def extract_lang_features(self, utterance, tokens):
         language_features = [False]*len(tokens)
+        shape = (64, len(language_features))
+        embeddings_list = np.zeros(shape)
         if '@' in utterance:
             utterance = self.delete_username(utterance)
         if self.has_link(utterance):
@@ -74,6 +83,11 @@ class Feature:
                 if token[0] in tokens:
                     i = tokens.index(token[0])
                     language_features[i] = True
+                # embedding = words2vec.find_word_embeddings(token[0], embeddings, embeddings_list, word_id, language_features)
+                # if embedding is None:
+                #     embedding = np.zeros(64)
+                # embeddings_list = np.append(embeddings_list, embedding, axis=0)
+                # embeddings_list.append(embedding)
         return language_features
 
     @staticmethod
@@ -100,6 +114,7 @@ class Feature:
             if '@' not in token:
                 new_utterance += token + ' '
         return new_utterance[:-1]
+
     @staticmethod
     def has_numbers(input_string):
         return bool(re.search(r'\d', input_string))
@@ -141,6 +156,15 @@ class Feature:
         return '#' in utterance
 
     @staticmethod
+    def delete_hashtag(utterance):
+        new_utterance = ''
+        tokens = utterance.split(' ')
+        for token in tokens:
+            if '#' in token:
+                new_utterance += token[1:] + ' '
+        return new_utterance[:-1]
+
+    @staticmethod
     def has_emoticons(utterance):
         emoticons_list = emoticons.emoticons_lib()
         for emoticon in emoticons_list:
@@ -174,14 +198,14 @@ class Feature:
                     return True
         return False
 
-    @staticmethod
-    def delete_username(utterance):
-        new_utterance = ''
-        tokens = utterance.split(' ')
-        for token in tokens:
-            if '@' not in token:
-                new_utterance += token + ' '
-        return new_utterance[:-1]
+    # @staticmethod
+    # def delete_username(utterance):
+    #     new_utterance = ''
+    #     tokens = utterance.split(' ')
+    #     for token in tokens:
+    #         if '@' not in token:
+    #             new_utterance += token + ' '
+    #     return new_utterance[:-1]
 
     @staticmethod
     def delete_conjuction(utterance):

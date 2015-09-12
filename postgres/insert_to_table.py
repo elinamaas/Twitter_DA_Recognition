@@ -1,10 +1,7 @@
-import da_recognition.matching_schema
-
 __author__ = 'snownettle'
 
 import postgres_configuration
 from da_recognition import dialogue_acts_taxonomy, matching_schema
-from general import check_lang
 import postgres_queries
 from mongoDB import mongoDBQueries, mongoDB_configuration
 from general import check_lang
@@ -188,9 +185,9 @@ def insert_into_segmantation_prediction_table(tweet_id, start_offset, end_offset
     postgres_configuration.close_connection(connection)
 
 
-def make_segmentation_utterance_table():
-    connection, cursor = postgres_configuration.make_connection()
-    segmentation_table_records = postgres_queries.find_all_records('segmentation')
+def make_segmentation_utterance_table(cursor, connection):
+    # connection, cursor = postgres_configuration.make_connection()
+    segmentation_table_records = postgres_queries.find_all_records('segmentation', cursor)
     segments_utt_data = list()
     for record in segmentation_table_records:
         tweet_id = record[0]
@@ -200,7 +197,7 @@ def make_segmentation_utterance_table():
         da_id_min = record[5]
         start_offset = record[1]
         end_offset = record[2]
-        token_results = postgres_queries.find_tokens_by_offset(tweet_id, start_offset, end_offset)
+        token_results = postgres_queries.find_tokens_by_offset(tweet_id, start_offset, end_offset, cursor)
         tokens = str() # as string with space
         for token in token_results:
             tokens += token[1] + ' '
@@ -216,10 +213,10 @@ def make_segmentation_utterance_table():
             '%(da_full)s, %(da_reduced)s, %(da_min)s)'
     cursor.executemany(query, segments_utt_data)
     connection.commit()
-    postgres_configuration.close_connection(connection)
+    # postgres_configuration.close_connection(connection)
 
 
-def multiple_tweets_insert(tweets_list):
+def multiple_tweets_insert(tweets_list, connection, cursor):
     connection, cursor = postgres_configuration.make_connection()
     query_tuple = ()
     for tweet in tweets_list:
@@ -239,14 +236,14 @@ def multiple_tweets_insert(tweets_list):
             'VALUES (%s, %s, %s, %s , %s , %s, %s)'
     cursor.executemany(query, query_tuple)
     connection.commit()
-    postgres_configuration.close_connection(connection)
+    # postgres_configuration.close_connection(connection)
 
 
-def insert_annotated_table(list_of_tweets, german_tweet_id):
-    connection, cursor = postgres_configuration.make_connection()
+def insert_annotated_table(list_of_tweets, german_tweet_id, cursor, connection):
+    # connection, cursor = postgres_configuration.make_connection()
     segment_dict_list = list()
     token_dict_list = list()
-    ontology_dict = matching_schema.make_ontology_dict()
+    ontology_dict = matching_schema.make_ontology_dict(cursor)
     for tweet in list_of_tweets:
         tweet_id = int(tweet.get_tweet_id())
         if tweet_id in german_tweet_id:
@@ -288,7 +285,5 @@ def insert_annotated_table(list_of_tweets, german_tweet_id):
                   ' %(da_id_full)s, %(da_id_reduced)s, %(da_id_min)s) '
     cursor.executemany(query_tokes, token_dict_list)
     connection.commit()
-    postgres_configuration.close_connection(connection)
-
 
 

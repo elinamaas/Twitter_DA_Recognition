@@ -4,13 +4,14 @@ from da_recognition import matching_schema
 
 # annotate all segments as inform
 
-def assign_inform_da():
-    records = postgres_queries.find_all_records('Segmentation')
-    da_id_full = postgres_queries.find_da_by_name('IT_IP_Inform', 'dialogue_act_full')
-    da_reduced = matching_schema.match_reduced(da_id_full)
-    da_id_reduced = postgres_queries.find_da_by_name(da_reduced, 'dialogue_act_reduced')
-    da_min = matching_schema.match_min(da_id_full)
-    da_id_min = postgres_queries.find_da_by_name(da_min, 'dialogue_act_minimal')
+
+def assign_inform_da(cursor):
+    records = postgres_queries.find_all_records('Segmentation', cursor)
+    da_id_full = postgres_queries.find_da_by_name('IT_IP_Inform', 'dialogue_act_full', cursor)
+    da_reduced = matching_schema.match_reduced(da_id_full, cursor)
+    da_id_reduced = postgres_queries.find_da_by_name(da_reduced, 'dialogue_act_reduced', cursor)
+    da_min = matching_schema.match_min(da_id_full, cursor)
+    da_id_min = postgres_queries.find_da_by_name(da_min, 'dialogue_act_minimal', cursor)
     for record in records:
         tweet_id = record[0]
         # segments_offset = record[1]
