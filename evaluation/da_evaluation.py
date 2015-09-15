@@ -120,20 +120,21 @@ def overall_evaluation(evaluation_dict):
     tn_rate = 0
     accurcy = 0
     for da, values in evaluation_dict.iteritems():
-        # if da != '0':
-        recall_da = values['recall'] * (values['tp'] + values['fn'])
-        recall += recall_da
-        # recall += values['recall']
-        precision_da = values['precision'] * (values['tp'] + values['fn'])
-        precision += precision_da
-        tn_rate_da = values['tn_rate'] * (values['tp'] + values['fn'])
-        tn_rate += tn_rate_da
-        accuracy_da = values['accuracy'] * (values['tp'] + values['fn'])
-        accurcy += accuracy_da
-        # precision += values['precision']
-        tp += values['tp']
-        fp += values['fp']
-        rd += values['tp'] + values['fn']
+        if da != '0':
+            recall_da = values['recall'] * (values['tp'] + values['fn'])
+            recall += recall_da
+            # recall += values['recall']
+            precision_da = values['precision'] * (values['tp'] + values['fn'])
+            precision += precision_da
+            tn_rate_da = values['tn_rate'] * (values['tp'] + values['fn'])
+            tn_rate += tn_rate_da
+            accuracy_da = values['accuracy'] * (values['tp'] + values['fn'])
+            accurcy += accuracy_da
+            # precision += values['precision']
+            tp += values['tp']
+            fp += values['fp']
+            rd += values['tp'] + values['fn']
+
     classification_numbers = len(evaluation_dict.values())
     # average_pr = precision/float(classification_numbers)
     average_pr = precision/float(rd)
@@ -144,6 +145,7 @@ def overall_evaluation(evaluation_dict):
     average_f1 = 2*average_pr*average_re/float(average_pr+average_re)
     da_evaluation = ['Macro-average Method', average_pr, average_re, average_tn_rate, average_accuracy, average_f1]
     evaluation_data.append(da_evaluation)
+    print 'Accuracy:' + str(tp/float(rd))
     # micro_pr = tp/float(tp+fp)
     # micro_re = tp/float(rd)
     # micro_f1 = 2*micro_pr*micro_re/float(micro_pr+micro_re)
@@ -204,7 +206,7 @@ def confusion_matrix(taxonomy, cursor):
         test.append(da_test)
     cm = nltk.ConfusionMatrix(gold, test)
     print 'Confusion matrix'
-    print(cm.pp(sort_by_count=True, show_percents=True, truncate=9))
+    print(cm.pp(sort_by_count=True, show_percents=True))
 
 
 

@@ -1,3 +1,5 @@
+import postgres.postgres_create_database
+
 __author__ = 'snownettle'
 from postgres import insert_to_table, postgres_queries, postgres_configuration, update_table
 from readData import editedAnnotatedData
@@ -5,6 +7,7 @@ from prepare_gold_standard import rebuild_conversations
 from da_recognition import baseline
 from da_recognition import supervised_learning, annotationRule
 from evaluation import da_evaluation
+from learning import words2vec
 # from mongoDB import mongoDB_configuration, queries
 # from prepare_gold_standard.annotated_tweets_final import editing_annotated_tweets
 # from prepare_gold_standard import insert_to_postgres
@@ -55,52 +58,28 @@ from evaluation import da_evaluation
 # postgres_queries.find_not_german_tweets()
 
 ###################### NEW ################################
+
 print 'start'
+# words, embeddings, word_id, id_word = words2vec.read_pkl('DATA/polyglot-de.pkl')
 connection, cursor = postgres_configuration.make_connection()
-if postgres_configuration.check_if_exists_tweet_table() is False:
-    # create db
-    postgres_configuration.create_db()
-    print 'Database is created'
-
-    # insert dit++
-    insert_to_table.insert_dialogue_act_names_full(connection, cursor)
-    insert_to_table.insert_dialogue_act_names_reduced(connection, cursor)
-    insert_to_table.insert_dialogue_act_names_minimal(connection, cursor)
-    print 'DIT++ taxonomy is inserted'
-
-    # insert golden standard to db
-    print 'Start inserting golden standard'
-    list_of_tweets = editedAnnotatedData.import_golden_standard_postgres('goldenStandard.xlsx')
-    #update language info
-    print 'Update language information'
-    postgres_queries.update_lang_info('postgres/update_lang_info.sql')
-    # check language, delete non german tweets and their children
-    print 'Delete non-german tweets and their children'
-    german_tweet_id = rebuild_conversations.delete_non_german_tweets()
-    print 'Insert to annotated token table and segmentation table'
-    insert_to_table.insert_annotated_table(list_of_tweets, german_tweet_id)
-    print 'Insert to segmentation utterance table'
-    insert_to_table.make_segmentation_utterance_table()
-    print 'Update tweet position in conversation'
-    update_table.update_position_conversation_column()
-    print 'Golden standard is inserted'
-
-else:
-    print 'Golden standard is already there'
-
-
-
+gold_standard_file = 'goldStandard.xlsx'
+postgres.postgres_create_database.create_db_insert(connection, cursor, gold_standard_file)
 
 # predictions
 taxonomy_list = ['full', 'reduced', 'minimal']
-# for taxonomy in taxonomy_list:
-#     print taxonomy
-#     da_unigrams= postgres_queries.find_da_unigrams(taxonomy, cursor)
-#     for a in da_unigrams:
-#         print str(a[0]) + '\t' + a[1]
+# supervised_learning.hmm_algorithm('minimal', cursor, connection)
+# da_evaluation.evaluation_taxonomy_da('minimal', cursor)
+print 'Inserting Baseline'
+if postgres_configuration.check_if_exists_prediction_table(cursor) is False:
+    baseline.assign_inform_da(cursor)
+else:
+    update_table.update_segmentation_prediction_table_baseline(cursor, connection)
+for taxonomy in taxonomy_list:
+    print taxonomy + ' Taxonomy'
+    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    da_evaluation.confusion_matrix(taxonomy, cursor)
 
-print 'Baseline'
-# baseline.assign_inform_da()
 #
 # print 'Baseline evaluation'
 # da_evaluation.evaluation_taxonomy('full')
@@ -113,8 +92,8 @@ print 'Baseline'
 
 # supervised_learning.conditional_random_fields('minimal', cursor, connection)
 # da_evaluation.evaluation_taxonomy_da('minimal', cursor)
-# da_evaluation.inter_annotation_agreement('minimal', cursor)
-# da_evaluation.confusion_matrix('minimal', cursor)
+# da_evaluation.inter_annotation_agreement('full', cursor)
+# da_evaluation.confusion_matrix('full', cursor)
 
 print 'Supervised learning: HMM'
 for taxonomy in taxonomy_list:
