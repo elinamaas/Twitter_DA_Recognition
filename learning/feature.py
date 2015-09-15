@@ -1,5 +1,5 @@
 from analysing_GS import emoticons, question_words
-from pattern.de import parse, split, INFINITIVE
+from pattern.de import parse, split
 import re
 from learning import words2vec
 import numpy as np
@@ -13,7 +13,7 @@ class Feature:
         Features:
         1. Length : length of the utterance
         2. Root user: Is the utterancce belongs to the root user or not :type: root_user: boolean
-        3. Position of the utterance in tweet. Is it first: :type: pos: boolean
+        3. Position of the utterance in tweet. Is it first: :type: pos: int
 
 
     """
@@ -27,18 +27,26 @@ class Feature:
         utterance = utterance.lower()
         length = self.utterance_length(start_offset, end_offset)
         root_user = self.has_root_username(root_username, current_username)
+        position = self.position_in_tweet(pos)
         link = self.has_link(utterance)
         question_mark = self.has_question_mark(utterance)
         exclamation_mark = self.has_explanation_mark(utterance)
         hashtag = self.has_hashtag(utterance)
         emoticons = self.has_emoticons(utterance)
         question_words = self.has_question_word(utterance)
-        first_verb = self.is_first_verb(utterance)
+        first_verb, imperative = self.is_first_verb(utterance)
         lang_features = self.extract_lang_features(utterance, language_features)
-        self.features = {'length' : length, 'root_user': root_user, 'pos': pos,
-                        'link': link, 'question_mark': question_mark, 'exclamation_mark': exclamation_mark,
-                        'hashtag': hashtag, 'emoticons': emoticons, 'question_words': question_words,
-                        'first_verb': first_verb, 'language_features': lang_features}
+        self.features = {'length': length, 'root_user': root_user, 'pos': position,
+                         'link': link, 'question_mark': question_mark, 'exclamation_mark': exclamation_mark,
+                         'hashtag': hashtag, 'emoticons': emoticons, 'question_words': question_words,
+                         'first_verb': first_verb, 'imperative': imperative,  'language_features': lang_features}
+
+    @staticmethod
+    def position_in_tweet(pos):
+        if pos > 2:
+            return pos
+        else:
+            return 3
 
     def compare(self, existing_feature):
         # if self.features == existing_feature.features:
@@ -186,17 +194,25 @@ class Feature:
 
     @staticmethod
     def is_first_verb(utterance):
+        is_verb = False
+        is_imperativ = False
         if '@' in utterance:
             utterance = Feature.delete_username(utterance)
         utterance = Feature.delete_conjuction(utterance)
-        sentences = parse(utterance, relations=True, lemmata=True).split()
-        pos_list = ['VB', 'VBP', 'VBZ', 'VBG', 'VBD', 'BN']
+        sentences = parse(utterance, relations=True, lemmata=True, tagset='STTS').split()
+        pos_list = [ 'VVFIN','VAFIN', 'VVINF', 'VAINF', 'VVIZU', 'VVIMP', 'VAIMP', 'VVPP', 'VAPP']
+        pos_imp = ['VVIMP', 'VAIMP']
+        # a = mood(utterance)
+        # print a
         if len(sentences) != 0:
             if len(sentences[0]) != 0:
                 pos = sentences[0][0][1]
                 if pos in pos_list:
-                    return True
-        return False
+                    is_verb = True
+                    if pos in pos_imp:
+                        is_imperativ = True
+                    return is_verb, is_imperativ
+        return is_verb, is_imperativ
 
     # @staticmethod
     # def delete_username(utterance):

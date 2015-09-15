@@ -1,18 +1,9 @@
 import collections
-import itertools
-
-from analysing_GS.calculate_emissions import build_root_usersname_emissions, build_length_utterance_emissions, \
-    build_segment_position_emissions, build_link_emissions, build_question_mark_emissions, \
-    build_exclamation_mark_emissions, build_hashtag_emissions, calculate_emission_probability_feature, \
-    build_emoticons_emissions, build_question_words_emissions, build_first_verb_emissions, build_emissions, calculate_emission_probability_feature_new
-# from analysing_GS.features import is_link, has_question_mark, has_explanation_mark, has_hashtag, has_emoticons, \
-#     has_question_word
+from analysing_GS.calculate_emissions import build_emissions, calculate_emission_probability_feature_new
 from postgres import postgres_queries
-from postgres.postgres_queries import count_start_conversation, count_end_conversation
 from learning.feature import Feature
 import features
-import gc
-from pattern.de import parse, split, INFINITIVE
+
 
 __author__ = 'snownettle'
 
@@ -33,10 +24,11 @@ def extract_features_test_set(data_set, language_features, cursor):
                 current_username = postgres_queries.find_username_by_tweet_id(tweet_id, cursor)
                 for i in range(0, len(segments), 1):
                     segment = segments[i]
-                    if i == 0:
-                        pos = True
-                    else:
-                        pos = False
+                    pos = i
+                    # if i == 0:
+                    #     pos = True
+                    # else:
+                    #     pos = False
                     start_offset = segment[0]
                     end_offset = segment[1]
                     utterance = segment[2]
@@ -67,10 +59,11 @@ def extract_features_training_set(training_set, taxonomy, states, cursor):
             number_of_segments += len(segments)
             for i in range(0, len(segments), 1):
                 segment = segments[i]
-                if i == 0:
-                    pos = True
-                else:
-                    pos = False
+                pos = i
+                # if i == 0:
+                #     pos = True
+                # else:
+                #     pos = False
                 start_offset = segment[0]
                 end_offset = segment[1]
                 utterance = segment[2]
@@ -89,6 +82,7 @@ def extract_language_features(training_set, taxonomy, cursor):
     tf_features = collections.defaultdict(dict)
     observation_tokens = set()
     idf_features = collections.defaultdict(dict)
+    utterance_list = ''
     for conversation in training_set:
         all_nodes = conversation.all_nodes()
         for node in all_nodes:
@@ -96,6 +90,16 @@ def extract_language_features(training_set, taxonomy, cursor):
             segments = postgres_queries.find_segments_utterance(tweet_id, taxonomy, cursor)
             for i in range(0, len(segments), 1):
                 segment = segments[i]
+                utterance = segments[i][2]
+                if '@' in utterance:
+                    utterance = Feature.delete_username(utterance)
+                if Feature.has_link(utterance):
+                    utterance = Feature.delete_link(utterance)
+                if Feature.has_link(utterance):
+                    utterance = Feature.delete_hashtag(utterance)
+                utterance = Feature.delete_non_alphabetic_symbols(utterance)
+                if len(utterance) != 0:
+                    utterance_list += utterance + '. '
                 features.term_frequency_inversce_doc(segment, tf_features, idf_features, observation_tokens)
                 # features.inverse_document_frequency(segment, idf_features)
 

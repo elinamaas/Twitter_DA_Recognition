@@ -99,6 +99,7 @@ def word2features(utterance, tokens):
         'emoticons=%s' % feature.features['emoticons'],
         'question_words=%s' % feature.features['question_words'],
         'first_verb=%s' % feature.features['first_verb'],
+        'imperative=%s' % feature.features['imperative'],
         'lang_features=%s' % feature.features['language_features']
     ]
 
