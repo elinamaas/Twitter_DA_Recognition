@@ -1,6 +1,6 @@
 __author__ = 'snownettle'
 from tenFoldCrossValidation import split10
-from learning import hmm, svm, crf, hmm_guassan
+from learning import hmm_multinomial, crf, hmm_gaussian
 from evaluation import da_evaluation
 from analysing_GS.tf_idf import calculate_tf_idf, word_appearance_tfidf
 import annotationRule
@@ -18,14 +18,18 @@ def train_test_seq(data_set):
     return train_test_list
 
 
-def hmm_algorithm(taxonomy, cursor, connection, embeddings, word_id, train_test_list):
-    # datasets = split10.fold_splitter(cursor)
+def hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_list):
     for train_test in train_test_list:
         train_set = train_test[0]
         test_set = train_test[1]
-            # = split10.train_test_sets(data_set, i)
-        # hmm.calculate_hmm(train_set, test_set, taxonomy, cursor, connection, embeddings, word_id)
-        hmm_guassan.calculate_hmm_g(train_set, test_set, taxonomy, cursor, connection, embeddings, word_id)
+        hmm_gaussian.calculate_hmm_g(train_set, test_set, taxonomy, cursor, connection)
+
+
+def hmm_multinomial_algorithm(taxonomy, cursor, connection, embeddings, word_id, train_test_list):
+    for train_test in train_test_list:
+        train_set = train_test[0]
+        test_set = train_test[1]
+        hmm_multinomial.calculate_hmm_g(train_set, test_set, taxonomy, cursor, connection, embeddings, word_id)
 
 
 def conditional_random_fields(taxonomy, cursor, connection, train_test_list):
@@ -38,14 +42,14 @@ def conditional_random_fields(taxonomy, cursor, connection, train_test_list):
 def recognize_da(taxonomy_list, cursor, connection, data_set):
     train_test_set = train_test_seq(data_set)
 
-    print 'Supervised learning: CRF'
-    for taxonomy in taxonomy_list:
-        print taxonomy + ' Taxonomy'
-        conditional_random_fields(taxonomy, cursor, connection, train_test_set)
-        da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
-        da_evaluation.inter_annotation_agreement(taxonomy, cursor)
-        da_evaluation.confusion_matrix(taxonomy, cursor)
-
+    # print 'Supervised learning: CRF'
+    # for taxonomy in taxonomy_list:
+    #     print taxonomy + ' Taxonomy'
+    #     conditional_random_fields(taxonomy, cursor, connection, train_test_set)
+    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    #     da_evaluation.confusion_matrix(taxonomy, cursor)
+    #
     # print '#############################################################'
     # print 'With Rules'
     # for taxonomy in taxonomy_list:
@@ -59,14 +63,14 @@ def recognize_da(taxonomy_list, cursor, connection, data_set):
     #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
     #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
     #     da_evaluation.confusion_matrix(taxonomy, cursor)
-    #
-    # print 'Supervised learning: HMM'
-    # for taxonomy in taxonomy_list:
-    #     print taxonomy + ' Taxonomy'
-    #     hmm_algorithm(taxonomy, cursor, connection, embeddings, word_id, train_test_set)
-    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
-    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
-    #     da_evaluation.confusion_matrix(taxonomy, cursor)
+
+    print 'Supervised learning: HMM'
+    for taxonomy in taxonomy_list:
+        print taxonomy + ' Taxonomy'
+        hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_set)
+        da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+        da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+        da_evaluation.confusion_matrix(taxonomy, cursor)
     #
     # print '#############################################################'
     # print 'With Rules'

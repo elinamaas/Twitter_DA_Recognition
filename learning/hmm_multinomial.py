@@ -11,10 +11,10 @@ __author__ = 'snownettle'
 #hidden markov model
 
 
-def calculate_hmm(training_set, test_set, taxonomy, cursor, connection):
+def calculate_hmm(training_set, test_set, taxonomy, cursor, connection, embeddings, word_id):
     # unigrams = features.calculate_da_unigrams('full')
     # taxonomy = 'full'
-    unigrams = analysing_GS.features.unigrams_training_set(training_set, taxonomy, cursor)
+    unigrams = analysing_GS.features.extract_da_features(training_set, taxonomy, cursor)
 
     states = find_states(unigrams) # da labels
     n_states = len(states)
@@ -22,7 +22,7 @@ def calculate_hmm(training_set, test_set, taxonomy, cursor, connection):
     transition_probability = calculate_transition_probability(training_set, states, taxonomy, cursor)
 
     language_features, feature_list, emissions = analysing_GS.extract_features.extract_features_training_set(
-        training_set, taxonomy, states, cursor)
+        training_set, taxonomy, states, cursor, embeddings, word_id)
 
     # emission_probability = calculate_emission_probability(states, observations_product,
     #                                                       observations, emissions)

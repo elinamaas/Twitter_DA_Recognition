@@ -7,6 +7,7 @@ import copy
 import numpy as np
 import nltk
 
+
 # from learning.feature import has_link
 from postgres import postgres_queries
 from pattern.de import conjugate
@@ -211,42 +212,6 @@ def calculate_da_lang_model_unigrams(taxonomy):
 # def calculate_da_lang_model_bigrams(taxonomy):
 #     da_lang_model = collections.defaultdict()
 #     return da_lang_model
-
-
-def extract_da_features(training_set, taxonomy):
-    unigrams = dict()
-    bigram_dict = collections.defaultdict(dict)
-    start_probability = dict()
-    for conversation in training_set:
-        for branch in conversation:
-            previous_da = None
-            start_segment = branch.start_segment()
-            da_start = start_segment.get_da_by_taxonomy(taxonomy)
-            if da_start in start_probability:
-                start_probability[da_start] += 1
-            else:
-                start_probability[da_start] = 1
-            segments = branch.get_segments()
-            for segment in segments:
-                da = segment.get_da_by_taxonomy(taxonomy)
-                if da in unigrams:
-                    unigrams[da] += 1
-                else:
-                    unigrams[da] = 1
-                if previous_da is None:
-                    previous_da = da
-                else:
-                    if previous_da in bigram_dict:
-                        if da in bigram_dict[previous_da]:
-                            bigram_dict[previous_da][da] += 1
-                        else:
-                           bigram_dict[previous_da][da] = 1
-                    else:
-                        bigram_dict[previous_da][da] = 1
-    starts = sum(start_probability.values())
-    for da, val in start_probability.iteritems():
-        start_probability[da] = val/float(starts)
-    return unigrams, start_probability, bigram_dict
 
 
 # def bigram_test_set(training_set, taxonomy, cursor):
