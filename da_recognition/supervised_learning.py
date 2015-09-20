@@ -1,26 +1,83 @@
 __author__ = 'snownettle'
 from tenFoldCrossValidation import split10
-from learning import hmm, svm, crf
+from learning import hmm, svm, crf, hmm_guassan
+from evaluation import da_evaluation
+from analysing_GS.tf_idf import calculate_tf_idf, word_appearance_tfidf
+import annotationRule
 
 
-def hmm_algorithm(taxonomy, cursor, connection):
-    datasets = split10.fold_splitter(cursor)
+def train_test_seq(data_set):
+    train_test_list = list()
     for i in range(0, 10, 1):
-        train_set, test_set = split10.train_test_sets(datasets, i)
-        hmm.calculate_hmm(train_set, test_set, taxonomy, cursor, connection)
-
-#
-# def svm(taxonomy, cursor, connection):
-#     datasets = split10.fold_splitter(cursor)
-#     for i in range(0, 10, 1):
-#         train_set, test_set = split10.train_test_sets(datasets, i)
-#         svm.run_svm(train_set, test_set, taxonomy, cursor, connection)
+        data_set_copy = data_set.copy()
+        train_set, test_set = split10.train_test_sets(data_set_copy, i)
+        tokens_full, tokens_reduced, tokens__min = calculate_tf_idf(train_set)
+        word_appearance_tfidf(train_set,tokens_full, tokens_reduced, tokens__min)
+        word_appearance_tfidf(test_set,tokens_full, tokens_reduced, tokens__min)
+        train_test_list.append([train_set, test_set])
+    return train_test_list
 
 
-def conditional_random_fields(taxonomy, cursor, connection):
-    datasets = split10.fold_splitter(cursor)
-    for i in range(0, 10, 1):
-        train_set, test_set = split10.train_test_sets(datasets, i)
+def hmm_algorithm(taxonomy, cursor, connection, embeddings, word_id, train_test_list):
+    # datasets = split10.fold_splitter(cursor)
+    for train_test in train_test_list:
+        train_set = train_test[0]
+        test_set = train_test[1]
+            # = split10.train_test_sets(data_set, i)
+        # hmm.calculate_hmm(train_set, test_set, taxonomy, cursor, connection, embeddings, word_id)
+        hmm_guassan.calculate_hmm_g(train_set, test_set, taxonomy, cursor, connection, embeddings, word_id)
+
+
+def conditional_random_fields(taxonomy, cursor, connection, train_test_list):
+    for train_test in train_test_list:
+        train_set = train_test[0]
+        test_set = train_test[1]
         crf.run_crf(train_set, test_set, taxonomy, cursor, connection)
-# hmm_utterance_length()
 
+
+def recognize_da(taxonomy_list, cursor, connection, data_set):
+    train_test_set = train_test_seq(data_set)
+
+    print 'Supervised learning: CRF'
+    for taxonomy in taxonomy_list:
+        print taxonomy + ' Taxonomy'
+        conditional_random_fields(taxonomy, cursor, connection, train_test_set)
+        da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+        da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+        da_evaluation.confusion_matrix(taxonomy, cursor)
+
+    # print '#############################################################'
+    # print 'With Rules'
+    # for taxonomy in taxonomy_list:
+    #     print taxonomy + ' Taxonomy'
+    #     annotationRule.assign_zero_da(taxonomy, cursor, connection)
+    #     if taxonomy == 'full':
+    #         annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+    #     if taxonomy != 'full':
+    #         annotationRule.assign_social_da(taxonomy, cursor, connection)
+    #         annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    #     da_evaluation.confusion_matrix(taxonomy, cursor)
+    #
+    # print 'Supervised learning: HMM'
+    # for taxonomy in taxonomy_list:
+    #     print taxonomy + ' Taxonomy'
+    #     hmm_algorithm(taxonomy, cursor, connection, embeddings, word_id, train_test_set)
+    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    #     da_evaluation.confusion_matrix(taxonomy, cursor)
+    #
+    # print '#############################################################'
+    # print 'With Rules'
+    # for taxonomy in taxonomy_list:
+    #     print taxonomy + ' Taxonomy'
+    #     annotationRule.assign_zero_da(taxonomy, cursor, connection)
+    #     if taxonomy == 'full':
+    #         annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+    #     if taxonomy != 'full':
+    #         annotationRule.assign_social_da(taxonomy, cursor, connection)
+    #         annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    #     da_evaluation.confusion_matrix(taxonomy, cursor)

@@ -18,12 +18,24 @@ class Feature:
 
     """
         #
-    def __init__(self, utterance, start_offset, end_offset, root_username, current_username, pos, language_features):
+    def __init__(self, utterance, start_offset, end_offset, root_username, current_username, pos, embeddings, word_id):
         self.features = dict()
+        self.word2vec = np.zeros((64,))
         # self.word2vec = list()
-        self.extract_features(utterance, start_offset, end_offset, root_username, current_username, pos, language_features)
+        # self.features_hmm = list()
+        self.token_appearance = dict()
+        self.extract_features(utterance, start_offset, end_offset, root_username, current_username, pos, embeddings, word_id)
+        # self.features_hmm = self.extract_features_hmm()
+        self.language_features_full = list()
+        self.language_features_reduced = list()
+        self.language_features_minimal = list()
 
-    def extract_features(self, utterance, start_offset, end_offset, root_username, current_username, pos, language_features):
+    def add_language_features(self, tf_idf_full, tf_idf_reduced, tf_idf_min):
+        self.language_features_full = [t in self.token_appearance for t in tf_idf_full]
+        self.language_features_reduced = [t in self.token_appearance for t in tf_idf_reduced]
+        self.language_features_minimal = [t in self.token_appearance for t in tf_idf_min]
+
+    def extract_features(self, utterance, start_offset, end_offset, root_username, current_username, pos, embeddings, word_id):
         utterance = utterance.lower()
         length = self.utterance_length(start_offset, end_offset)
         root_user = self.has_root_username(root_username, current_username)
@@ -35,11 +47,15 @@ class Feature:
         emoticons = self.has_emoticons(utterance)
         question_words = self.has_question_word(utterance)
         first_verb, imperative = self.is_first_verb(utterance)
-        lang_features = self.extract_lang_features(utterance, language_features)
+        word_embeddings, token_appearance = self.extract_lang_features(utterance, embeddings, word_id)
+        self.token_appearance = token_appearance
+        self.word2vec = word_embeddings
         self.features = {'length': length, 'root_user': root_user, 'pos': position,
                          'link': link, 'question_mark': question_mark, 'exclamation_mark': exclamation_mark,
                          'hashtag': hashtag, 'emoticons': emoticons, 'question_words': question_words,
-                         'first_verb': first_verb, 'imperative': imperative,  'language_features': lang_features}
+                         'first_verb': first_verb, 'imperative': imperative}
+            # ,  'language_features': lang_features}
+                         # 'word_embeddings': word_embeddings}
 
     @staticmethod
     def position_in_tweet(pos):
@@ -49,24 +65,43 @@ class Feature:
             return 3
 
     def compare(self, existing_feature):
+        if self.features == existing_feature.features:
+            return np.array_equal(self.word2vec, existing_feature.word2vec)
+        return False
         # if self.features == existing_feature.features:
         #     return np.array_equal(self.word2vec, existing_feature.word2vec)
         # else:
         #     return False
-        return self.features == existing_feature.features
+        # return self.features == existing_feature.features
+
+    def compare_hmm(self, existing_feature):
+        if self.features == existing_feature.features:
+            return np.allclose(self.word2vec, existing_feature.word2vec)
+        return False
 
     def add_new_feature(self, feature_list):
         do_not_add = False
+        i = -1
         for feature in feature_list:
             if self.compare(feature):
-                do_not_add = True
+                # do_not_add = True
+                return i
+            i += 1
         if do_not_add is False:
             feature_list.append(self)
+            return i+1
 
-    def find_index_in_feature_list(self, feature_list):
-        for i in range(0, len(feature_list), 1):
-            if self.compare(feature_list[i]):
+    def add_new_feature_hmm(self, feature_list):
+        do_not_add = False
+        i = -1
+        for feature in feature_list:
+            if self.compare_hmm(feature):
+                # do_not_add = True
                 return i
+            i += 1
+        if do_not_add is False:
+            feature_list.append(self)
+            return i+1
 
     def contains_in_list(self, feature_list):
         for i in range(0, len(feature_list), 1):
@@ -75,10 +110,17 @@ class Feature:
                 return i
         return None
 
-    def extract_lang_features(self, utterance, tokens):
-        language_features = [False]*len(tokens)
-        shape = (64, len(language_features))
-        embeddings_list = np.zeros(shape)
+    def contains_in_list_hmm(self, feature_list):
+        for i in range(0, len(feature_list), 1):
+            feature = feature_list[i]
+            if self.compare_hmm(feature):
+                return i
+        return None
+
+    def extract_lang_features(self, utterance, embeddings, word_id):
+        shape = (64,)
+        word_embeddings = np.zeros(shape)
+        token_appearance = dict()
         if '@' in utterance:
             utterance = self.delete_username(utterance)
         if self.has_link(utterance):
@@ -86,17 +128,24 @@ class Feature:
         utterance = self.delete_non_alphabetic_symbols(utterance)
         sentences = parse(utterance, relations=True, lemmata=True).split()
         # tokens = utterance.split(' ')
+        token_number = 1
         for sentence in sentences:
+            token_number += len(sentence)
             for token in sentence:
-                if token[0] in tokens:
-                    i = tokens.index(token[0])
-                    language_features[i] = True
-                # embedding = words2vec.find_word_embeddings(token[0], embeddings, embeddings_list, word_id, language_features)
-                # if embedding is None:
-                #     embedding = np.zeros(64)
+                if token[5] in token_appearance:
+                    token_appearance[token[5]] += 1
+                else:
+                    token_appearance[token[5]] = 1
+                embedding = words2vec.find_word_embeddings(token[0], embeddings, word_id)
+                if embedding is not None:
+                    word_embeddings = np.add(word_embeddings, embedding)
+                    # embedding = np.zeros(64)
                 # embeddings_list = np.append(embeddings_list, embedding, axis=0)
                 # embeddings_list.append(embedding)
-        return language_features
+        if token_number > 1:
+            token_number = token_number - 1
+        word_embeddings = np.divide(word_embeddings, token_number)
+        return word_embeddings, token_appearance
 
     @staticmethod
     def has_link(utterance):
@@ -214,15 +263,6 @@ class Feature:
                     return is_verb, is_imperativ
         return is_verb, is_imperativ
 
-    # @staticmethod
-    # def delete_username(utterance):
-    #     new_utterance = ''
-    #     tokens = utterance.split(' ')
-    #     for token in tokens:
-    #         if '@' not in token:
-    #             new_utterance += token + ' '
-    #     return new_utterance[:-1]
-
     @staticmethod
     def delete_conjuction(utterance):
         conjuction_list = ['und', 'oder', 'aber']
@@ -232,13 +272,4 @@ class Feature:
             return utterance.split(' ', 1)[1]
         else:
             return utterance
-
-
-
-
-
-
-
-
-
 
