@@ -1,5 +1,5 @@
 __author__ = 'snownettle'
-import postgres_queries
+import postgres_queries, postgres_configuration
 from da_recognition import matching_schema
 
 
@@ -49,4 +49,24 @@ def update_segmentation_prediction_table_baseline(cursor, connection):
             str(da_id_full) + ', dialogue_act_id_reduced = ' + str(da_id_reduced) + ', dialogue_act_id_min = ' + \
             str(da_id_min) + ' where tweet_id = %s and start_offset = %s and end_offset = %s'
     cursor.executemany(query, tweet_list)
+    connection.commit()
+
+
+def update_da_prediction_bulk(tuples, taxonomy, cursor, connection):
+    # connection, cursor = postgres_configuration.make_connection()
+    if taxonomy == 'full':
+        # da_id = postgres_queries.find_da_by_name(da_name, postgres_configuration.fullOntologyTable, cursor)
+        query = 'update segmentation_prediction set dialogue_act_id_full = %s where tweet_id =  %s ' \
+                'and start_offset = %s  and end_offset= %s'
+    elif taxonomy == 'reduced':
+        # da_id = postgres_queries.find_da_by_name(da_name, postgres_configuration.reducedOntologyTable, cursor)
+        query = 'update segmentation_prediction set dialogue_act_id_reduced = %s where tweet_id = %s' \
+                ' and start_offset = %s and end_offset= %s'
+    else:
+        # da_id = postgres_queries.find_da_by_name(da_name, postgres_configuration.minimalOntologyTable, cursor)
+        query = 'update segmentation_prediction set dialogue_act_id_min = %s where tweet_id = %s' \
+                ' and start_offset = %s and end_offset= %s'
+    # cursor.execute(query)
+    # connection.commit()
+    cursor.executemany(query, tuples)
     connection.commit()

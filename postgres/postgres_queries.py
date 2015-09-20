@@ -2,21 +2,18 @@ __author__ = 'snownettle'
 
 import postgres_configuration
 
+
 def find_annotated_conversation_number(cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select max(Conversation_id) from Tweet where Annotated = True'
     cursor.execute(query)
     results = cursor.fetchone()
-    # postgres_configuration.close_connection(connection)
     return results[0]
 
 
 def find_conversation(conversation_number, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select * from Tweet where Conversation_id = ' + str(conversation_number)
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
@@ -30,27 +27,23 @@ def find_conversations():
 
 
 def find_conversations_root(cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select * from tweet where in_replay_to is null and annotated = True'
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
 def find_not_german_tweets(cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select tweet_id, tweet_text from tweet where german = False'
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     print 'There are ' + str(len(results)) + ' not german tweets'
     for result in results:
         print result
     return results
 
 
-def get_all_da_taxonome(taxonomy, cursor):
+def get_all_da_taxonomy(taxonomy, cursor):
     if taxonomy == 'full':
         query = 'select dialogue_act_id, dialogue_act_name from dialogue_act_full order by dialogue_act_id asc'
     elif taxonomy == 'reduced':
@@ -75,7 +68,6 @@ def find_das_for_tweet(tweet_id):
 
 
 def find_da_unigrams(taxonomy, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
         query = 'select count(s.dialogue_act_id_full), da_full.dialogue_act_name ' \
                 ' from ' + postgres_configuration.segmentationTable + ' as s, ' + postgres_configuration.fullOntologyTable + ' as da_full ' \
@@ -150,7 +142,7 @@ def find_predicted_states(taxonomy, cursor):
 def find_segments(tweet_id, cursor):
     # connection, cursor = postgres_configuration.make_connection()
     query = 'select s.start_offset, s.end_offset,  da_full.dialogue_act_name, da_reduced.dialogue_act_name, ' \
-            'da_min.dialogue_act_name from ' + postgres_configuration.segmentationTable + ' as s, ' \
+            'da_min.dialogue_act_name, s.utterance from ' + postgres_configuration.segmentationUtteranceTable + ' as s, ' \
             + postgres_configuration.fullOntologyTable + ' as da_full, '\
             + postgres_configuration.reducedOntologyTable + ' as da_reduced, ' \
             + postgres_configuration.minimalOntologyTable + ' as da_min where s.tweet_id =' + str(tweet_id) \
@@ -202,62 +194,49 @@ def find_segments_utterance(tweet_id, taxonomy, cursor):
 
 
 def find_children(tweet_id, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select * from tweet where in_replay_to =' + str(tweet_id) + ' and annotated = True'
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
 def find_tweet_text(tweet_id, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'SELECT tweet_text FROM tweet where tweet_id =' + str(tweet_id)
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results[0]
 
 
 def find_all_tokens(cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select tweet_id, token from annotated_token_tweet'
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
 def find_all_tweet_texts(cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select tweet_id, tweet_text from tweet'
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
 def find_all_records(table_name, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select * from ' + table_name
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
 def find_da_by_name(da_name, table, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select dialogue_act_id from ' + table + ' where dialogue_act_name = \'' + da_name + '\''
     cursor.execute(query)
     results = cursor.fetchone()
     da_id = results[0]
-    # postgres_configuration.close_connection(connection)
     return da_id
 
 
 def find_da_for_segment(tweet_id, start_offset, end_offset, taxonomy, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
         query = 'select dialogue_act_id_full from segmentation ' \
                 ' where tweet_id = ' + str(tweet_id) + ' and start_offset =' + str(start_offset)\
@@ -272,22 +251,18 @@ def find_da_for_segment(tweet_id, start_offset, end_offset, taxonomy, cursor):
                 + ' and end_offset = ' + str(end_offset)
     cursor.execute(query)
     results = cursor.fetchone()
-    # postgres_configuration.close_connection(connection)
     return results[0]
 
 
 def find_da_by_id(da_id, table, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select dialogue_act_name from ' + table + ' where dialogue_act_id = ' + str(da_id)
     cursor.execute(query)
     results = cursor.fetchone()
     da_id = results[0]
-    # postgres_configuration.close_connection(connection)
     return da_id
 
 
 def find_all_da_occurances_taxonomy(table, da, taxonomy, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
         da_id = find_da_by_name(da,'Dialogue_act_full', cursor)
         query = 'select tweet_id, start_offset, end_offset, dialogue_act_id_full from ' + \
@@ -302,12 +277,10 @@ def find_all_da_occurances_taxonomy(table, da, taxonomy, cursor):
                 table + ' where dialogue_act_id_min = ' + str(da_id)
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
 def find_all_utterance_by_da(table, da, taxonomy, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
         da_id = find_da_by_name(da,'Dialogue_act_full', cursor)
         query = 'select * from ' + \
@@ -322,7 +295,6 @@ def find_all_utterance_by_da(table, da, taxonomy, cursor):
                 table + ' where dialogue_act_id_min = ' + str(da_id)
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
@@ -335,7 +307,6 @@ def get_utterance_da_by_tweet_id(table, id, cursor):
 
 
 def update_da_prediction(da_name, tweet_id, start_offset, end_offset, taxonomy, cursor, connection):
-    # connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
         da_id = find_da_by_name(da_name, postgres_configuration.fullOntologyTable, cursor)
         query = 'update segmentation_prediction set dialogue_act_id_full = ' + str(da_id) + \
@@ -351,31 +322,23 @@ def update_da_prediction(da_name, tweet_id, start_offset, end_offset, taxonomy, 
         query = 'update segmentation_prediction set dialogue_act_id_min = ' + str(da_id) + \
                 ' where tweet_id = ' + tweet_id + ' and start_offset = ' + str(start_offset) \
                 + ' and end_offset= ' + str(end_offset)
-    # print query
     cursor.execute(query)
     connection.commit()
-    # cursor.fetchall()
-    # results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
 
 
 def find_tokens_by_offset(tweet_id, start_offset, end_offset, cursor):
-    # search in betweet
     end_offset += 1
     start_offset -= 1
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select token_offset, token from annotated_token_tweet where tweet_id =' + str(tweet_id) + \
             ' and token_offset > ' + str(start_offset) + ' and token_offset < ' + str(end_offset) + \
             ' order by token_offset asc'
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
 def count_segments_training_set(training_set):
     segment_count = 0
-    seg_len = set()
     for conversation in training_set:
         all_nodes = conversation.all_nodes()
         for node in all_nodes:
@@ -386,7 +349,6 @@ def count_segments_training_set(training_set):
 
 
 def find_utterance_tweet(taxonomy, tweet_id, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     if taxonomy == 'full':
         query = 'select s.utterance, da.dialogue_act_name from ' + postgres_configuration.segmentationUtteranceTable + ' as s, ' \
                 + postgres_configuration.fullOntologyTable + ' as da where s.dialogue_act_id_full = da.dialogue_act_id' \
@@ -401,16 +363,13 @@ def find_utterance_tweet(taxonomy, tweet_id, cursor):
                                  ' and s.tweet_id= ' + str(tweet_id)
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
 def count_end_conversation(cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select distinct tweet_id from tweet where position_in_conversation = \'end\''
     cursor.execute(query)
     results = cursor.rowcount
-    # postgres_configuration.close_connection(connection)
     return results
 
 
@@ -419,42 +378,33 @@ def count_start_conversation(cursor):
     query = 'select distinct tweet_id from tweet where position_in_conversation = \'start\''
     cursor.execute(query)
     results = cursor.rowcount
-    # postgres_configuration.close_connection(connection)
     return results
 
 
 def find_username_by_tweet_id(tweet_id, cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select username from tweet where tweet_id = ' + str(tweet_id)
     cursor.execute(query)
     results = cursor.fetchone()
-    # postgres_configuration.close_connection(connection)
     return results[0]
 
 
 def update_lang_info(filename, cursor, connection):
-    # connection, cursor = postgres_configuration.make_connection()
     for line in open(filename,'r'):
         cursor.execute(line)
         connection.commit()
-    # postgres_configuration.close_connection(connection)
 
 
 def delete_non_german_tweets(tweets_list, cursor, connection):
-    # connection, cursor = postgres_configuration.make_connection()
     for tweet in tweets_list:
         query = 'delete from tweet where tweet_id = ' + str(tweet)
         cursor.execute(query)
         connection.commit()
-    # postgres_configuration.close_connection(connection)
 
 
 def find_all_tweets(cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select tweet_id from tweet'
     cursor.execute(query)
     results = cursor.fetchall()
-    # postgres_configuration.close_connection(connection)
     return results
 
 
@@ -478,6 +428,17 @@ def join_tables(taxonomy, cursor):
     results = cursor.fetchall()
     return results
 
+
+def get_all_da(taxonomy, cursor):
+    if taxonomy == 'full':
+        query = 'select dialogue_act_id, dialogue_act_name from ' + postgres_configuration.fullOntologyTable
+    elif taxonomy == 'reduced':
+        query = 'select dialogue_act_id, dialogue_act_name from ' + postgres_configuration.reducedOntologyTable
+    else:
+        query = 'select dialogue_act_id, dialogue_act_name from ' + postgres_configuration.minimalOntologyTable
+    cursor.execute(query)
+    results = cursor.fetchall()
+    return results
 
 
 

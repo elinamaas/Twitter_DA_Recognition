@@ -213,65 +213,69 @@ def calculate_da_lang_model_unigrams(taxonomy):
 #     return da_lang_model
 
 
-def unigrams_training_set(training_set, taxonomy, cursor):
-    number_start_symbol = len(training_set)
+def extract_da_features(training_set, taxonomy):
     unigrams = dict()
-    # unigrams['<S>'] = number_start_symbol
-    # end_symbol = '<E>'
-    # number_end_symbols = postgres_queries.count_end_conversation(cursor)
-    # unigrams[end_symbol] = number_end_symbols
+    bigram_dict = collections.defaultdict(dict)
+    start_probability = dict()
     for conversation in training_set:
-        all_nodes = conversation.all_nodes()
-        for node in all_nodes:
-            tweet_id = node.tag
-            segments = postgres_queries.find_segments(tweet_id, cursor)
+        for branch in conversation:
+            previous_da = None
+            start_segment = branch.start_segment()
+            da_start = start_segment.get_da_by_taxonomy(taxonomy)
+            if da_start in start_probability:
+                start_probability[da_start] += 1
+            else:
+                start_probability[da_start] = 1
+            segments = branch.get_segments()
             for segment in segments:
-                if taxonomy == 'full':
-                    if segment[2] in unigrams:
-                        unigrams[segment[2]] += 1
-                    else:
-                        unigrams[segment[2]] = 1
-                elif taxonomy == 'reduced':
-                    if segment[3] in unigrams:
-                        unigrams[segment[3]] += 1
-                    else:
-                        unigrams[segment[3]] = 1
+                da = segment.get_da_by_taxonomy(taxonomy)
+                if da in unigrams:
+                    unigrams[da] += 1
                 else:
-                    if segment[4] in unigrams:
-                        unigrams[segment[4]] += 1
-                    else:
-                        unigrams[segment[4]] = 1
-
-    return unigrams
-
-
-def bigram_test_set(training_set, taxonomy, cursor):
-    bigram_count = 0
-    bigram_dict = collections.defaultdict(list)
-    conversation_start = '<S>'
-    for conversation in training_set:
-        root = conversation.root
-        if root is not None:
-            segments = postgres_queries.find_segments(root, cursor)
-            # sorted_segments = sort_segments(s_egments, 'full')
-            previous_da = conversation_start
-            for segment in segments:
-                da = fetch_da_taxonomy(segment, taxonomy)
-            # for offset, da in segments.iteritems():
-                if previous_da in bigram_dict:
-                    end_da = bigram_dict[previous_da]
-                    if da in end_da:
-                        bigram_dict[previous_da][da] += 1
+                    unigrams[da] = 1
+                if previous_da is None:
+                    previous_da = da
+                else:
+                    if previous_da in bigram_dict:
+                        if da in bigram_dict[previous_da]:
+                            bigram_dict[previous_da][da] += 1
+                        else:
+                           bigram_dict[previous_da][da] = 1
                     else:
                         bigram_dict[previous_da][da] = 1
+    starts = sum(start_probability.values())
+    for da, val in start_probability.iteritems():
+        start_probability[da] = val/float(starts)
+    return unigrams, start_probability, bigram_dict
 
-                else:
-                    bigram_dict[previous_da] = {}
-                    bigram_dict[previous_da][da] = 1
-                previous_da = da
-            find_children_bigrams(root, previous_da, bigram_dict, taxonomy, cursor)
-    # bigram_count = sum(bigram_dict.values())
-    return bigram_dict
+
+# def bigram_test_set(training_set, taxonomy, cursor):
+#     bigram_count = 0
+#     bigram_dict = collections.defaultdict(list)
+#     conversation_start = '<S>'
+#     for conversation in training_set:
+#         root = conversation.root
+#         if root is not None:
+#             segments = postgres_queries.find_segments(root, cursor)
+#             # sorted_segments = sort_segments(s_egments, 'full')
+#             previous_da = conversation_start
+#             for segment in segments:
+#                 da = fetch_da_taxonomy(segment, taxonomy)
+#             # for offset, da in segments.iteritems():
+#                 if previous_da in bigram_dict:
+#                     end_da = bigram_dict[previous_da]
+#                     if da in end_da:
+#                         bigram_dict[previous_da][da] += 1
+#                     else:
+#                         bigram_dict[previous_da][da] = 1
+#
+#                 else:
+#                     bigram_dict[previous_da] = {}
+#                     bigram_dict[previous_da][da] = 1
+#                 previous_da = da
+#             find_children_bigrams(root, previous_da, bigram_dict, taxonomy, cursor)
+#     # bigram_count = sum(bigram_dict.values())
+#     return bigram_dict
 
 
 # def sort_segments(segments, taxonomy):
