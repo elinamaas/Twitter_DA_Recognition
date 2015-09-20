@@ -25,11 +25,11 @@ def hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_list):
         hmm_gaussian.calculate_hmm_g(train_set, test_set, taxonomy, cursor, connection)
 
 
-def hmm_multinomial_algorithm(taxonomy, cursor, connection, embeddings, word_id, train_test_list):
+def hmm_multinomial_algorithm(taxonomy, cursor, connection, train_test_list):
     for train_test in train_test_list:
         train_set = train_test[0]
         test_set = train_test[1]
-        hmm_multinomial.calculate_hmm_g(train_set, test_set, taxonomy, cursor, connection, embeddings, word_id)
+        hmm_multinomial.calculate_hmm_m(train_set, test_set, taxonomy, cursor, connection)
 
 
 def conditional_random_fields(taxonomy, cursor, connection, train_test_list):
@@ -64,7 +64,7 @@ def recognize_da(taxonomy_list, cursor, connection, data_set):
     #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
     #     da_evaluation.confusion_matrix(taxonomy, cursor)
 
-    print 'Supervised learning: HMM'
+    print 'Supervised learning: HMM Gaussian'
     for taxonomy in taxonomy_list:
         print taxonomy + ' Taxonomy'
         hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_set)
@@ -72,6 +72,28 @@ def recognize_da(taxonomy_list, cursor, connection, data_set):
         da_evaluation.inter_annotation_agreement(taxonomy, cursor)
         da_evaluation.confusion_matrix(taxonomy, cursor)
     #
+    # print '#############################################################'
+    # print 'With Rules'
+    # for taxonomy in taxonomy_list:
+    #     print taxonomy + ' Taxonomy'
+    #     annotationRule.assign_zero_da(taxonomy, cursor, connection)
+    #     if taxonomy == 'full':
+    #         annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+    #     if taxonomy != 'full':
+    #         annotationRule.assign_social_da(taxonomy, cursor, connection)
+    #         annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+    #     da_evaluation.confusion_matrix(taxonomy, cursor)
+
+    print 'Supervised learning: HMM Multinomial'
+    for taxonomy in taxonomy_list:
+        print taxonomy + ' Taxonomy'
+        hmm_multinomial_algorithm(taxonomy, cursor, connection, train_test_set)
+        da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+        da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+        da_evaluation.confusion_matrix(taxonomy, cursor)
+
     # print '#############################################################'
     # print 'With Rules'
     # for taxonomy in taxonomy_list:
