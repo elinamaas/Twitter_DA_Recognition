@@ -3,7 +3,7 @@ import numpy as np
 from learning.feature import Feature
 from analysing_GS.features import is_link
 # from learning.feature import is_first_verb, is_link, has_emoticons, has_question_word
-import emoticons
+import analysing_GS.emoticons
 
 __author__ = 'snownettle'
 
