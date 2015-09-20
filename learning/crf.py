@@ -91,7 +91,7 @@ def segment2features(branch, i, taxonomy):
         'question_words=%s' % feature.features['question_words'],
         'first_verb=%s' % feature.features['first_verb'],
         'imperative=%s' % feature.features['imperative'],
-        # 'embeddings=%s' % feature.word2vec,
+        'embeddings=%s' % feature.word2vec,
         'lang_features=%s' % language_features
     ]
     if i > 0:
@@ -109,7 +109,7 @@ def segment2features(branch, i, taxonomy):
             '-1question_words=%s' % feature1.features['question_words'],
             '-1first_verb=%s' % feature1.features['first_verb'],
             '-1imperative=%s' % feature1.features['imperative'],
-            # '-1embeddings=%s' % feature1.word2vec,
+            '-1embeddings=%s' % feature1.word2vec,
             'lang_features=%s' % language_features
         ])
     else:
@@ -129,7 +129,7 @@ def segment2features(branch, i, taxonomy):
             '+1question_words=%s' % feature1.features['question_words'],
             '+1first_verb=%s' % feature1.features['first_verb'],
             '+1imperative=%s' % feature1.features['imperative'],
-            # '+1embeddings=%s' % feature1.word2vec,
+            '+1embeddings=%s' % feature1.word2vec,
             'lang_features=%s' % language_features
         ])
     else:
