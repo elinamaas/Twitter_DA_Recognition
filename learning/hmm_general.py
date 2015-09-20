@@ -1,6 +1,6 @@
 import collections
 import numpy as np
-from postgres import postgres_queries
+from postgres import postgres_queries, update_table
 
 __author__ = 'snownettle'
 
@@ -102,3 +102,25 @@ def find_da_id(taxonomy, cursor):
     for result in results:
         da_id_dict[result[1]] = result[0]
     return da_id_dict
+
+
+def recognized_da_segments(recognized_segmments_da, da_list, states, da_id_taxonomy, path_observation):
+    for i in range(0, len(da_list), 1):
+        da = da_list[i]
+        dialog_act_name = states[da]
+        path = path_observation[i]
+        da_id = da_id_taxonomy[dialog_act_name]
+        tuple_da_segment = (da_id, path[0], path[1], path[2])
+        recognized_segmments_da = recognized_segmments_da + (tuple_da_segment,)
+    return recognized_segmments_da
+
+
+def da_predictions(test_seq, model, con_pathes, states, da_id_taxonomy, taxonomy, cursor, connection):
+    recognized_segmments_da = ()
+    for i in range(0, len(test_seq), 1): # conversation level
+        for j in range(0, len(test_seq[i]), 1): # branch level
+            brach_features = test_seq[i][j]
+            logprob, alice_hears = model.decode(brach_features, algorithm="viterbi")
+            path_observation = con_pathes[i][j]
+            recognized_segmments_da = recognized_da_segments(recognized_segmments_da, alice_hears, states, da_id_taxonomy,  path_observation)
+    update_table.update_da_prediction_bulk(recognized_segmments_da, taxonomy, cursor, connection)

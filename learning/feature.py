@@ -64,58 +64,58 @@ class Feature:
         else:
             return 3
 
-    def compare(self, existing_feature):
-        if self.features == existing_feature.features:
-            return np.array_equal(self.word2vec, existing_feature.word2vec)
-        return False
-        # if self.features == existing_feature.features:
-        #     return np.array_equal(self.word2vec, existing_feature.word2vec)
-        # else:
-        #     return False
-        # return self.features == existing_feature.features
-
-    def compare_hmm(self, existing_feature):
-        if self.features == existing_feature.features:
-            return np.allclose(self.word2vec, existing_feature.word2vec)
-        return False
-
-    def add_new_feature(self, feature_list):
-        do_not_add = False
-        i = -1
-        for feature in feature_list:
-            if self.compare(feature):
-                # do_not_add = True
-                return i
-            i += 1
-        if do_not_add is False:
-            feature_list.append(self)
-            return i+1
-
-    def add_new_feature_hmm(self, feature_list):
-        do_not_add = False
-        i = -1
-        for feature in feature_list:
-            if self.compare_hmm(feature):
-                # do_not_add = True
-                return i
-            i += 1
-        if do_not_add is False:
-            feature_list.append(self)
-            return i+1
-
-    def contains_in_list(self, feature_list):
-        for i in range(0, len(feature_list), 1):
-            feature = feature_list[i]
-            if self.compare(feature):
-                return i
-        return None
-
-    def contains_in_list_hmm(self, feature_list):
-        for i in range(0, len(feature_list), 1):
-            feature = feature_list[i]
-            if self.compare_hmm(feature):
-                return i
-        return None
+    # def compare(self, existing_feature):
+    #     if self.features == existing_feature.features:
+    #         return np.array_equal(self.word2vec, existing_feature.word2vec)
+    #     return False
+    #     # if self.features == existing_feature.features:
+    #     #     return np.array_equal(self.word2vec, existing_feature.word2vec)
+    #     # else:
+    #     #     return False
+    #     # return self.features == existing_feature.features
+    #
+    # def compare_hmm(self, existing_feature):
+    #     if self.features == existing_feature.features:
+    #         return np.allclose(self.word2vec, existing_feature.word2vec)
+    #     return False
+    #
+    # def add_new_feature(self, feature_list):
+    #     do_not_add = False
+    #     i = -1
+    #     for feature in feature_list:
+    #         if self.compare(feature):
+    #             # do_not_add = True
+    #             return i
+    #         i += 1
+    #     if do_not_add is False:
+    #         feature_list.append(self)
+    #         return i+1
+    #
+    # def add_new_feature_hmm(self, feature_list):
+    #     do_not_add = False
+    #     i = -1
+    #     for feature in feature_list:
+    #         if self.compare_hmm(feature):
+    #             # do_not_add = True
+    #             return i
+    #         i += 1
+    #     if do_not_add is False:
+    #         feature_list.append(self)
+    #         return i+1
+    #
+    # def contains_in_list(self, feature_list):
+    #     for i in range(0, len(feature_list), 1):
+    #         feature = feature_list[i]
+    #         if self.compare(feature):
+    #             return i
+    #     return None
+    #
+    # def contains_in_list_hmm(self, feature_list):
+    #     for i in range(0, len(feature_list), 1):
+    #         feature = feature_list[i]
+    #         if self.compare_hmm(feature):
+    #             return i
+    #     return None
 
     def extract_lang_features(self, utterance, embeddings, word_id):
         shape = (64,)

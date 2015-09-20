@@ -1,13 +1,10 @@
 from __future__ import division
 import collections
-
 import numpy as np
 from sklearn.datasets.samples_generator import make_spd_matrix
 from hmmlearn.hmm import GaussianHMM
-
 from hmm_general import start_transition_probability_extraction
-from learning.hmm_general import find_da_id
-from postgres import update_table
+from learning.hmm_general import find_da_id, da_predictions
 
 __author__ = 'snownettle'
 #hidden markov model
@@ -28,31 +25,9 @@ def calculate_hmm_g(training_set, test_set, taxonomy, cursor, connection):
     model.transmat_ = transition_probability
     model.means_ = mean
     model.covars_ = covariance
-    # model._set_startprob(start_probability)
-    # model._set_transmat(transition_probability)
-    # model._set_means(mean)
-    # model._set_covars(covariance)
 
     test_seq, con_pathes = extract_features_test_set_gaus(test_set, taxonomy)
-    recognized_segmments_da = ()
-    for i in range(0, len(test_seq), 1): # conversation level
-        for j in range(0, len(test_seq[i]), 1): # branch level
-            brach_features = test_seq[i][j]
-            logprob, alice_hears = model.decode(brach_features, algorithm="viterbi")
-            path_observation = con_pathes[i][j]
-            recognized_segmments_da = recognized_da_segments(recognized_segmments_da, alice_hears, states, da_id_taxonomy,  path_observation)
-    update_table.update_da_prediction_bulk(recognized_segmments_da, taxonomy, cursor, connection)
-
-
-def recognized_da_segments(recognized_segmments_da, da_list, states, da_id_taxonomy, path_observation):
-    for i in range(0, len(da_list), 1):
-        da = da_list[i]
-        dialog_act_name = states[da]
-        path = path_observation[i]
-        da_id = da_id_taxonomy[dialog_act_name]
-        tuple_da_segment = (da_id, path[0], path[1], path[2])
-        recognized_segmments_da = recognized_segmments_da + (tuple_da_segment,)
-    return recognized_segmments_da
+    da_predictions(test_seq, model, con_pathes, states, da_id_taxonomy, taxonomy, cursor, connection)
 
 
 def calculate_means(states, means_list, n_feature):
@@ -78,7 +53,7 @@ def calculate_means(states, means_list, n_feature):
 
 
 def calculate_covariance(states, feature_list, n_features):
-    # should be cheched. rewrite. no it doesnt work, that's why we return random
+    # should be checked. rewrite. no it doesnt work, that's why we return random
     random = np.array([make_spd_matrix(n_features, random_state=0) + np.eye(n_features) for x in range(len(states))])
 
     # covariance = list()
