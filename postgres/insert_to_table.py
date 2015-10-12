@@ -2,9 +2,10 @@ __author__ = 'snownettle'
 
 import postgres_configuration
 from da_recognition import dialogue_acts_taxonomy, matching_schema
-import postgres_queries
 from mongoDB import mongoDBQueries, mongoDB_configuration
 from general import check_lang
+from postgres_configuration import  fullOntologyTable, reducedOntologyTable, minimalOntologyTable
+from postgres_queries import find_da_by_name
 
 
 def insert_raw_tweets(tweets):
@@ -41,7 +42,6 @@ def insert_into_edit_tweet_table(conversation_list):
                 german = check_lang.check_german(tweet_text)
                 query = "INSERT INTO Tweet (Tweet_id, In_replay_to, Conversation_id, Tweet_text, Annotated, German) " \
                     "VALUES (%s, %s, %s, \'%s\', %s, %s) " % (tweet_id, parent_tweet, conversation_id, tweet_text, True, german)
-                # print query
                 cursor.execute(query)
                 connection.commit()
         conversation_id += 1
@@ -56,11 +56,9 @@ def insert_dialogue_act_names_full(connection, cursor):
         da_tuple = (1, root, None)
         da_list.append(da_tuple)
         da_tuple = find_children(dialogue_act_names_tree, root, da_list)
-        # connection, cursor = postgres_configuration.make_connection()
         query = "INSERT INTO Dialogue_act_full (Dialogue_act_id, Dialogue_act_name, Parent_act_id) VALUES (%s, %s, %s)"
         cursor.executemany(query, da_tuple)
         connection.commit()
-        # postgres_configuration.close_connection(connection)
 
 
 def insert_dialogue_act_names_reduced(connection, cursor):
@@ -71,12 +69,10 @@ def insert_dialogue_act_names_reduced(connection, cursor):
         da_tuple = (1, root, None)
         da_list.append(da_tuple)
         da_tuple = find_children(dialogue_act_names_tree, root, da_list)
-        # connection, cursor = postgres_configuration.make_connection()
         query = "INSERT INTO Dialogue_act_reduced (Dialogue_act_id, Dialogue_act_name, Parent_act_id) " \
                 "VALUES (%s, %s, %s)"
         cursor.executemany(query, da_tuple)
         connection.commit()
-        # postgres_configuration.close_connection(connection)
 
 
 def insert_dialogue_act_names_minimal(connection, cursor):
@@ -87,12 +83,10 @@ def insert_dialogue_act_names_minimal(connection, cursor):
         da_tuple = (1, root, None)
         da_list.append(da_tuple)
         da_tuple = find_children(dialogue_act_names_tree, root, da_list)
-        # connection, cursor = postgres_configuration.make_connection()
         query = "INSERT INTO Dialogue_act_minimal (Dialogue_act_id, Dialogue_act_name, Parent_act_id) " \
                 "VALUES (%s, %s, %s)"
         cursor.executemany(query, da_tuple)
         connection.commit()
-        # postgres_configuration.close_connection(connection)
 
 
 def find_children(tree, parent, da_list):
@@ -102,7 +96,6 @@ def find_children(tree, parent, da_list):
         children = tree.children(parent.tag)
     for child in children:
         if parent == 'DIT++ Taxonomy':
-            # print 'here'
             current_tuple = (len(da_list) + 1, child.tag, 1)
         else:
             parent_id = find_parent_id(da_list, parent.tag)
@@ -144,80 +137,24 @@ def select_da(table):
         return False
 
 
-def insert_annotated_tweets_to_segment_table(tweets_list): # insert to segment table
-    connection, cursor = postgres_configuration.make_connection()
-    for tweet in tweets_list:
-        segments = tweet.get_segments()
-        for segment_offset, da in segments.iteritems():
-            # query = 'select dialogue_act_id from dialogue_act where dialogue_act_name = \'' + da + '\''
-            # cursor.execute(query)
-            # results = cursor.fetchall()
-            results = postgres_queries.find_da_by_name(da)
-            for result in results:
-                segments_tuple = (int(tweet.get_tweet_id()), segment_offset, result[0])
-                query = 'insert into segmentation (tweet_id, segmentation_offsets, dialogue_act_id) values (%s, %s, %s)'
-                cursor.executemany(query, [segments_tuple])
-                connection.commit()
-        tokens = tweet.get_tokens()
-        for offset, token_da in tokens.iteritems():
-            for token, da in token_da.iteritems():
-                # query = 'select dialogue_act_id from dialogue_act where dialogue_act_name = \'' + da + '\''
-                # cursor.execute(query)
-                # results = cursor.fetchall()
-                results = postgres_queries.find_da_by_name(da)
-                for result in results:
-                    token_da_tuple = (int(tweet.get_tweet_id()), offset, token, result[0])
-                    query = 'insert into annotated_token_tweet (tweet_id, token_offset, token, dialogue_act_id) ' \
-                            'values (%s, %s, %s, %s) '
-                    cursor.executemany(query, [token_da_tuple])
-                    connection.commit()
-
-    postgres_configuration.close_connection(connection)
+def make_utterance(token_list, tweet_id, start_offset, end_offset):
+    tweet = list()
+    for i in range(0, len(token_list), 1):
+        if token_list[i]['tweet_id'] == tweet_id:
+            tweet.append(token_list[i])
+    utterance = str()
+    for i in range(start_offset, end_offset+1, 1):
+        for token in tweet:
+            if int(token['offset']) == i:
+                if isinstance(token['token'], unicode):
+                    utterance += token['token'] + ' '
+                else:
+                    utterance += str(token['token'])
+                break
+    return utterance[:-1]
 
 
-def insert_into_segmantation_prediction_table(tweet_id, start_offset, end_offset, da_id_full, da_reduced, da_min):
-    connection, cursor = postgres_configuration.make_connection()
-    query = 'INSERT INTO Segmentation_Prediction (Tweet_id, start_offset, end_offset, dialogue_act_id_full, ' \
-            'dialogue_act_id_reduced, dialogue_act_id_min)' \
-            'VALUES (%s, %s , %s,  %s, %s, %s) ' %(tweet_id, start_offset, end_offset, da_id_full, da_reduced, da_min)
-    cursor.execute(query)
-    connection.commit()
-    postgres_configuration.close_connection(connection)
-
-
-def make_segmentation_utterance_table(cursor, connection):
-    # connection, cursor = postgres_configuration.make_connection()
-    segmentation_table_records = postgres_queries.find_all_records('segmentation', cursor)
-    segments_utt_data = list()
-    for record in segmentation_table_records:
-        tweet_id = record[0]
-        # segmentation_offset = record[1]
-        da_id_full = record[3]
-        da_id_reduced = record[4]
-        da_id_min = record[5]
-        start_offset = record[1]
-        end_offset = record[2]
-        token_results = postgres_queries.find_tokens_by_offset(tweet_id, start_offset, end_offset, cursor)
-        tokens = str() # as string with space
-        for token in token_results:
-            tokens += token[1] + ' '
-        # delete last whitespace
-        tokens = tokens[:-1]
-        segments_utt_dict = {'tweet_id':tweet_id, 'start_offset': start_offset, 'end_offset': end_offset,
-                             'utterance': tokens, 'da_full': da_id_full,
-                             'da_reduced': da_id_reduced, 'da_min': da_id_min}
-        segments_utt_data.append(segments_utt_dict)
-    query = 'INSERT INTO Segments_utterance (Tweet_id , start_offset, end_offset, Utterance, ' \
-            'Dialogue_act_id_full, Dialogue_act_id_reduced, Dialogue_act_id_min) ' \
-            'VALUES (%(tweet_id)s, %(start_offset)s, %(end_offset)s, %(utterance)s, ' \
-            '%(da_full)s, %(da_reduced)s, %(da_min)s)'
-    cursor.executemany(query, segments_utt_data)
-    connection.commit()
-    # postgres_configuration.close_connection(connection)
-
-
-def multiple_tweets_insert(tweets_list, connection, cursor):
-    connection, cursor = postgres_configuration.make_connection()
+def multiple_tweets_insert(tweets_list, cursor, connection):
     query_tuple = ()
     for tweet in tweets_list:
         tweet_id = tweet.get_tweet_id()
@@ -236,11 +173,9 @@ def multiple_tweets_insert(tweets_list, connection, cursor):
             'VALUES (%s, %s, %s, %s , %s , %s, %s)'
     cursor.executemany(query, query_tuple)
     connection.commit()
-    # postgres_configuration.close_connection(connection)
 
 
 def insert_annotated_table(list_of_tweets, german_tweet_id, cursor, connection):
-    # connection, cursor = postgres_configuration.make_connection()
     segment_dict_list = list()
     token_dict_list = list()
     ontology_dict = matching_schema.make_ontology_dict(cursor)
@@ -269,21 +204,35 @@ def insert_annotated_table(list_of_tweets, german_tweet_id, cursor, connection):
                 da_id_min = da_id_ontologies[2]
                 start_offset = int(segment.split(':')[0])
                 end_offset = int(segment.split(':')[1])
+                utterance = make_utterance(token_dict_list, tweet_id, start_offset, end_offset)
                 segment_dict = {'tweet_id': tweet_id, 'start_offset': start_offset, 'end_offset': end_offset,
-                                'da_id_full': da_id_full,
+                                'utterance': utterance, 'da_id_full': da_id_full,
                                 'da_id_reduced': da_id_reduced, 'da_id_min': da_id_min}
                 segment_dict_list.append(segment_dict)
 
-    query_segmentation = 'insert into segmentation (tweet_id, start_offset, end_offset, dialogue_act_id_full, ' \
+    query_segmentation = 'insert into segmentation (tweet_id, start_offset, end_offset, utterance, dialogue_act_id_full, ' \
                          'dialogue_act_id_reduced, dialogue_act_id_min ) values (%(tweet_id)s, %(start_offset)s, ' \
-                         '%(end_offset)s, %(da_id_full)s, %(da_id_reduced)s, %(da_id_min)s)'
+                         '%(end_offset)s, %(utterance)s,%(da_id_full)s, %(da_id_reduced)s, %(da_id_min)s)'
     cursor.executemany(query_segmentation, segment_dict_list)
     connection.commit()
+    insert_baseline_prediction_table(segment_dict_list, cursor, connection)
 
-    query_tokes = 'insert into annotated_token_tweet (tweet_id, token_offset, token, dialogue_act_id_full, ' \
-                  'dialogue_act_id_reduced, dialogue_act_id_min) values (%(tweet_id)s, %(offset)s, %(token)s,' \
-                  ' %(da_id_full)s, %(da_id_reduced)s, %(da_id_min)s) '
-    cursor.executemany(query_tokes, token_dict_list)
+
+def insert_baseline_prediction_table(segment_dict_list, cursor, connection):
+    da_baseline_full_reduced = 'IT_IP_Inform'
+    da_baseline_min = 'IT_IP'
+    da_id_full = find_da_by_name(da_baseline_full_reduced, fullOntologyTable, cursor)
+    da_id_reduced = find_da_by_name(da_baseline_full_reduced, reducedOntologyTable, cursor)
+    da_id_min = find_da_by_name(da_baseline_min, minimalOntologyTable, cursor)
+    query_predictions = 'insert into segmentation_prediction (Tweet_id, start_offset, end_offset, dialogue_act_id_full, ' \
+                        'dialogue_act_id_reduced, dialogue_act_id_min)' \
+                        'VALUES (%(tweet_id)s, %(start_offset)s, %(end_offset)s, ' \
+                        '%(da_id_full)s, %(da_id_reduced)s, %(da_id_min)s)'
+    for segment in segment_dict_list:
+        segment['da_id_full'] = da_id_full
+        segment['da_id_reduced'] = da_id_reduced
+        segment['da_id_min'] = da_id_min
+    cursor.executemany(query_predictions, segment_dict_list)
     connection.commit()
 
 

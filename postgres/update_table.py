@@ -70,3 +70,9 @@ def update_da_prediction_bulk(tuples, taxonomy, cursor, connection):
     # connection.commit()
     cursor.executemany(query, tuples)
     connection.commit()
+
+
+def update_lang_info(filename, cursor, connection):
+    for line in open(filename,'r'):
+        cursor.execute(line)
+        connection.commit()
