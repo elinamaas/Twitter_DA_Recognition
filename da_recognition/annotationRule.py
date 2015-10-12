@@ -1,11 +1,11 @@
 __author__ = 'snownettle'
-from postgres import postgres_queries, update_table
+from postgres import postgres_queries, postgres_configuration
 from analysing_GS import emoticons, question_words
 
 
 def assign_zero_da(taxonomy, cursor, connection):
     # @username or some symbols
-    records = postgres_queries.find_all_records('segments_utterance', cursor)
+    records = postgres_queries.find_all_records(postgres_configuration.segmentationTable, cursor)
     for record in records:
         tweet_id = str(record[0])
         start_offset = record[1]
@@ -17,11 +17,10 @@ def assign_zero_da(taxonomy, cursor, connection):
                                                   taxonomy, cursor, connection)
 
 
-
 def assign_social_da(taxonomy, cursor, connection):
     #
     emoticons_list = emoticons.emoticons_lib()
-    records = postgres_queries.find_all_records('segments_utterance', cursor)
+    records = postgres_queries.find_all_records(postgres_configuration.segmentationTable, cursor)
     for record in records:
         tweet_id = str(record[0])
         start_offset = record[1]
@@ -38,7 +37,7 @@ def assign_social_da(taxonomy, cursor, connection):
 def assign_it_is_da(taxonomy, cursor, connection):
     #
     # q_words = question_words.german_question_words()
-    records = postgres_queries.find_all_records('segments_utterance', cursor)
+    records = postgres_queries.find_all_records(postgres_configuration.segmentationTable, cursor)
     for record in records:
         tweet_id = str(record[0])
         start_offset = record[1]
@@ -53,7 +52,7 @@ def assign_it_is_da(taxonomy, cursor, connection):
 
 
 def assign_choice_q_da(taxonomy, cursor, connection):
-    records = postgres_queries.find_all_records('segments_utterance', cursor)
+    records = postgres_queries.find_all_records(postgres_configuration.segmentationTable, cursor)
     for record in records:
         tweet_id = str(record[0])
         start_offset = record[1]

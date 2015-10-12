@@ -1,7 +1,7 @@
 __author__ = 'snownettle'
 
 from postgres import postgres_configuration, postgres_create_database
-# from da_recognition.baseline import baseline
+from evaluation.da_evaluation import evaluation_taxonomy_da
 from da_recognition import supervised_learning
 from learning import words2vec
 from tenFoldCrossValidation.split10 import fold_splitter
@@ -16,6 +16,10 @@ postgres_create_database.create_db_insert(connection, cursor, gold_standard_file
 taxonomy_list = ['full', 'reduced', 'minimal']
 
 ######### BASELINE ##########
+print 'Baseline evaluation'
+for taxonomy in taxonomy_list:
+
+    evaluation_taxonomy_da(taxonomy, cursor)
 # evaluate baseline
 # baseline(taxonomy_list, cursor, connection)
 
