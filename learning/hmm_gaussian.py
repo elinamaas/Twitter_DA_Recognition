@@ -5,6 +5,7 @@ from sklearn.datasets.samples_generator import make_spd_matrix
 from hmmlearn.hmm import GaussianHMM
 from hmm_general import start_transition_probability_extraction
 from learning.hmm_general import find_da_id, da_predictions
+from math import pow
 
 __author__ = 'snownettle'
 #hidden markov model
@@ -19,6 +20,7 @@ def calculate_hmm_g(training_set, test_set, taxonomy, cursor, connection):
     n_features = len(feature_list[states[0]][0])
     mean = calculate_means(states, feature_list, n_features)
     covariance = calculate_covariance(states, feature_list, n_features)
+    # covariance = diag_cov(states, feature_list, n_features, mean)
 
     model = GaussianHMM(n_components=n_states, covariance_type='full')
     model.startprob_ = start_probability
@@ -54,21 +56,101 @@ def calculate_means(states, means_list, n_feature):
 
 def calculate_covariance(states, feature_list, n_features):
     # should be checked. rewrite. no it doesnt work, that's why we return random
-    random = np.array([make_spd_matrix(n_features, random_state=0) + np.eye(n_features) for x in range(len(states))])
 
+    np.set_printoptions(threshold='nan')
+    random = np.array([make_spd_matrix(n_features, random_state=0) + np.eye(n_features) for x in range(len(states))])
     # covariance = list()
     # for i in range(0, len(states), 1):
     #     state = states[i]
     #     f_list_da = feature_list[state]
-    #     feat_transpose = np.transpose(f_list_da)
-    #     a = np.cov(feat_transpose)
-    #     if np.isnan(a).all():
-    #         a = random[i]
-    #     covariance.append(a)
+    #     # feat_transpose = np.transpose(f_list_da)
+    #     arr = np.cov(np.array(f_list_da), rowvar=0)
+    #     # adjusted_cov = arr + 0.2*np.identity(arr.shape[0])
+    #
+    #
+    #     if np.isnan(arr).all():
+    #         print 'random'
+    #         arr = random[i]
+    #
+    #
+    #     # arr_tr = np.transpose(arr)
+    #     # new_arr = np.multiply(arr, arr_tr)
+    #
+    #
+    #
+    #     # arr[arr == 0.] = 0.00001
+    #
+    #
+    #     # covariance.append(new_arr)
+    #     # print arr
+    #
+    #
+    #     # print str(is_pos_def(arr)) + str(states[i])
+    #     # print arr
+    #     # diagonal = arr.diagonal()
+    #     # print (arr.transpose() == arr).all()
+    #     a = 0
+    #     while not is_pos_def(arr):
+    #         arr += 0.2
+    #         a += 1
+    #         if a == 10:
+    #             arr = random[i]
+    #     if not (arr.transpose() == arr).all():
+    #         arr = make_summetric(arr)
+    #
+    #
+    #
+    #     print states[i]
+    #     print (arr.transpose() == arr).all()
+    #     # np.linalg.cholesky(arr)
+    #     covariance.append(arr)
+    #     # t = np.linalg.cholesky(adjusted_cov)
     # covariance = np.array(covariance)
+    #
+    # # print is_pos_def(covariance)
+    #
+    # np.linalg.cholesky(covariance)
+    # # covariance_tr = np.transpose(covariance)
+    # # cov = np.multiply(covariance, covariance_tr)
+    # # print covariance
     # return covariance
 
     return random
+
+
+def diag_cov(states, feature_list, n_features, means):
+    diag_covariance = list()
+    for i in range(0, len(states), 1):
+        da_valus_feature = list()
+        state = states[i]
+        f_list_da = feature_list[state]
+        # feat_transpose = np.transpose(f_list_da)
+        # arr = np.cov(np.array(f_list_da), rowvar=0)
+        for j in range(0, n_features, 1):
+            sigma = 0
+            for k in range(0, len(f_list_da), 1):
+                sigma += pow((f_list_da[k][j] - means[i][j]), 2)
+            value = sigma/float(len(f_list_da))
+            if value == 0:
+                value = 0.001
+            da_valus_feature.append(value)
+        diag_covariance.append(da_valus_feature)
+    diag_covariance = np.array(diag_covariance)
+    # print diag_covariance
+    return diag_covariance
+
+
+def make_summetric(array):
+    return array + array.T
+    # for i in range(0, array.shape[0], 1):
+    #     for j in range(0, array.shape[0], 1):
+    #         array[j][i] = array[i][j]
+    #     i +=1
+    # return array
+
+
+def is_pos_def(x):
+    return np.all(np.linalg.eigvals(x) > 0)
 
 
 def extract_features_training_set_gaus(training_set, taxonomy):

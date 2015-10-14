@@ -28,8 +28,7 @@ def create_db_insert(connection, cursor, file):
         # check language, delete non german tweets and their children
         print 'Delete non-german tweets and their children'
         german_tweet_id = rebuild_conversations.delete_non_german_tweets(cursor, connection)
-        print 'Insert to annotated token table, segmentation table, segmentation utterance table'
-        print 'Insert to segmentation utterance table'
+        print 'Insert to segmentation table'
         insert_to_table.insert_annotated_table(list_of_tweets, german_tweet_id, cursor, connection)
 
         # insert_to_table.make_segmentation_utterance_table(cursor, connection)

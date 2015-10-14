@@ -51,8 +51,8 @@ def unigrams_raw_annotation(list_of_annotated_tweets):
     # return number_of_unigrams
 
 
-def students_tweets():# how much tweets were annotated by 1, 2 or 3 students
-    new_list_tweet_german, collection_list = rebuild_conversations.conversation_regarding_language()
+def students_tweets(cursor):# how much tweets were annotated by 1, 2 or 3 students
+    new_list_tweet_german, collection_list = rebuild_conversations.conversation_regarding_language(cursor)
     collection = mongoDB_configuration.get_collection(mongoDB_configuration.db_name,
                                                       mongoDB_configuration.collectionNameAllAnnotations)
     results = mongoDBQueries.find_all(collection)
@@ -99,7 +99,7 @@ def segments_in_tweets(list_of_tweets):
 
 def types_of_conversation():
     #find short and long conversation, their depth and width
-    conversation_amount = postgres_queries.find_annotated_conversation_number()
+    conversation_amount = postgres_queries.find_conversation_number()
     conversation_list = list()
     depth_dict = dict()
     depth_dict_long = dict()

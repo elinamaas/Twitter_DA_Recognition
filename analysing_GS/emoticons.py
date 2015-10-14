@@ -1,5 +1,4 @@
 # encoding: utf-8
-from postgres import postgres_configuration, postgres_queries
 __author__ = 'snownettle'
 
 
@@ -16,30 +15,3 @@ def emoticons_lib():
     emoticons_list = emoticons_string.split(' ')
     return emoticons_list
 
-
-# def count_emoticons():
-#     conn, cur = postgres_configuration.make_connection()
-#     emoticons_list = emoticons_lib()
-#     records = postgres_queries.find_all_records('segments_utterance', cur)
-#     f = 0
-#     nf = 0
-#     print len(records)
-#     for record in records:
-#         # if 'http:' not in record[3]:
-#         #     a = any(emoticon in emoticons_list for emoticon in record[3])
-#         # if a is True:
-#         #     print record[3]
-#         #     f += 1
-#         # else:
-#         #     nf += 1
-#         for emoticon in emoticons_list:
-#             if emoticon in record[3] and 'http:' not in record[3]:
-#                 print record[3]
-#                 f += 1
-#                 break
-#
-#     print 'true ' + str(f)
-#     print 'false ' + str(nf)
-#     postgres_configuration.close_connection(conn)
-#
-# count_emoticons()

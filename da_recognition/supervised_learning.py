@@ -42,49 +42,52 @@ def conditional_random_fields(taxonomy, cursor, connection, train_test_list):
 def recognize_da(taxonomy_list, cursor, connection, data_set):
     train_test_set = train_test_seq(data_set)
 
-    # print 'Supervised learning: CRF'
-    # for taxonomy in taxonomy_list:
-    #     print taxonomy + ' Taxonomy'
-    #     conditional_random_fields(taxonomy, cursor, connection, train_test_set)
-    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
-    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
-    #     da_evaluation.confusion_matrix(taxonomy, cursor)
-    #
-    # print '#############################################################'
-    # print 'With Rules'
-    # for taxonomy in taxonomy_list:
-    #     print taxonomy + ' Taxonomy'
-    #     annotationRule.assign_zero_da(taxonomy, cursor, connection)
-    #     if taxonomy == 'full':
-    #         annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
-    #     if taxonomy != 'full':
-    #         annotationRule.assign_social_da(taxonomy, cursor, connection)
-    #         annotationRule.assign_it_is_da(taxonomy, cursor, connection)
-    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
-    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
-    #     da_evaluation.confusion_matrix(taxonomy, cursor)
+    print 'Supervised learning: CRF'
+    for taxonomy in taxonomy_list:
+        print taxonomy + ' Taxonomy'
+        conditional_random_fields(taxonomy, cursor, connection, train_test_set)
+        da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+        da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+        da_evaluation.confusion_matrix(taxonomy, cursor)
+
+    print '#############################################################'
+    print 'With Rules'
+    for taxonomy in taxonomy_list:
+        print taxonomy + ' Taxonomy'
+        annotationRule.assign_zero_da(taxonomy, cursor, connection)
+        if taxonomy == 'full':
+            annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+        if taxonomy != 'full':
+            annotationRule.assign_social_da(taxonomy, cursor, connection)
+            annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+        da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+        da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+        da_evaluation.confusion_matrix(taxonomy, cursor)
 
     print 'Supervised learning: HMM Gaussian'
+
+    # hmm_gaussian_algorithm('minimal', cursor, connection, train_test_set) # delete after using
+
     for taxonomy in taxonomy_list:
         print taxonomy + ' Taxonomy'
         hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_set)
         da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
         da_evaluation.inter_annotation_agreement(taxonomy, cursor)
         da_evaluation.confusion_matrix(taxonomy, cursor)
-    #
-    # print '#############################################################'
-    # print 'With Rules'
-    # for taxonomy in taxonomy_list:
-    #     print taxonomy + ' Taxonomy'
-    #     annotationRule.assign_zero_da(taxonomy, cursor, connection)
-    #     if taxonomy == 'full':
-    #         annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
-    #     if taxonomy != 'full':
-    #         annotationRule.assign_social_da(taxonomy, cursor, connection)
-    #         annotationRule.assign_it_is_da(taxonomy, cursor, connection)
-    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
-    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
-    #     da_evaluation.confusion_matrix(taxonomy, cursor)
+
+    print '#############################################################'
+    print 'With Rules'
+    for taxonomy in taxonomy_list:
+        print taxonomy + ' Taxonomy'
+        annotationRule.assign_zero_da(taxonomy, cursor, connection)
+        if taxonomy == 'full':
+            annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+        if taxonomy != 'full':
+            annotationRule.assign_social_da(taxonomy, cursor, connection)
+            annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+        da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+        da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+        da_evaluation.confusion_matrix(taxonomy, cursor)
 
     print 'Supervised learning: HMM Multinomial'
     for taxonomy in taxonomy_list:
@@ -94,16 +97,16 @@ def recognize_da(taxonomy_list, cursor, connection, data_set):
         da_evaluation.inter_annotation_agreement(taxonomy, cursor)
         da_evaluation.confusion_matrix(taxonomy, cursor)
 
-    # print '#############################################################'
-    # print 'With Rules'
-    # for taxonomy in taxonomy_list:
-    #     print taxonomy + ' Taxonomy'
-    #     annotationRule.assign_zero_da(taxonomy, cursor, connection)
-    #     if taxonomy == 'full':
-    #         annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
-    #     if taxonomy != 'full':
-    #         annotationRule.assign_social_da(taxonomy, cursor, connection)
-    #         annotationRule.assign_it_is_da(taxonomy, cursor, connection)
-    #     da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
-    #     da_evaluation.inter_annotation_agreement(taxonomy, cursor)
-    #     da_evaluation.confusion_matrix(taxonomy, cursor)
+    print '#############################################################'
+    print 'With Rules'
+    for taxonomy in taxonomy_list:
+        print taxonomy + ' Taxonomy'
+        annotationRule.assign_zero_da(taxonomy, cursor, connection)
+        if taxonomy == 'full':
+            annotationRule.assign_choice_q_da(taxonomy, cursor, connection)
+        if taxonomy != 'full':
+            annotationRule.assign_social_da(taxonomy, cursor, connection)
+            annotationRule.assign_it_is_da(taxonomy, cursor, connection)
+        da_evaluation.evaluation_taxonomy_da(taxonomy, cursor)
+        da_evaluation.inter_annotation_agreement(taxonomy, cursor)
+        da_evaluation.confusion_matrix(taxonomy, cursor)

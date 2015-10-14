@@ -12,7 +12,8 @@ import rebuild_conversations
 #recalculate depending on ontology
 
 print 'start'
-if postgres_configuration.check_if_exists_tweet_table() is False:
+connection, cursor = postgres_configuration.make_connection()
+if postgres_configuration.check_if_exists_tweet_table(cursor) is False:
     # create db
     postgres_configuration.create_db()
     print 'Database is created'
@@ -50,14 +51,14 @@ conversation_list = rebuild_conversations.build_conversation_from_mongo(collecti
 
 print '\n' + '\033[1m' + 'Full ontology'
 print '\033[0m'
-agreed, tweets_to_edit = annotated_tweets_final.iaa_ontologies(collectionAllAnnotation, ontology='full')
+agreed, tweets_to_edit = annotated_tweets_final.iaa_ontologies(collectionAllAnnotation, ontology='full', cursor= cursor)
 # annotated_tweets_final.merging(agreed, tweets_to_edit)
 print '\n' + '\033[1m' + 'Reduced ontology'
 print '\033[0m'
-annotated_tweets_final.iaa_ontologies(collectionAllAnnotation, ontology='reduced')
+annotated_tweets_final.iaa_ontologies(collectionAllAnnotation, ontology='reduced', cursor= cursor)
 print '\n' + '\033[1m' + 'Minimal ontology'
 print '\033[0m'
-annotated_tweets_final.iaa_ontologies(collectionAllAnnotation, ontology='minimal')
+annotated_tweets_final.iaa_ontologies(collectionAllAnnotation, ontology='minimal', cursor= cursor)
 
 # merging
 # annotated_tweets_final.merging(agreed, tweets_to_edit)

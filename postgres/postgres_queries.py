@@ -3,8 +3,8 @@ __author__ = 'snownettle'
 import postgres_configuration
 
 
-def find_annotated_conversation_number(cursor):
-    query = 'select max(Conversation_id) from Tweet where Annotated = True'
+def find_conversation_number(cursor):
+    query = 'select max(Conversation_id) from Tweet'
     cursor.execute(query)
     results = cursor.fetchone()
     return results[0]
@@ -18,7 +18,7 @@ def find_conversation(conversation_number, cursor):
 
 
 def find_conversations():
-    converasation_number = find_annotated_conversation_number()
+    converasation_number = find_conversation_number()
     conversation_list = list()
     for i in range(1, converasation_number +1, 1):
         conversation = find_conversation(i)
@@ -27,7 +27,7 @@ def find_conversations():
 
 
 def find_conversations_root(cursor):
-    query = 'select * from tweet where in_replay_to is null and annotated = True'
+    query = 'select * from tweet where in_replay_to is null'
     cursor.execute(query)
     results = cursor.fetchall()
     return results
@@ -201,7 +201,7 @@ def find_segments_utterance(tweet_id, taxonomy, cursor):
 
 
 def find_children(tweet_id, cursor):
-    query = 'select * from tweet where in_replay_to =' + str(tweet_id) + ' and annotated = True'
+    query = 'select * from tweet where in_replay_to =' + str(tweet_id)
     cursor.execute(query)
     results = cursor.fetchall()
     return results
@@ -381,7 +381,6 @@ def count_end_conversation(cursor):
 
 
 def count_start_conversation(cursor):
-    # connection, cursor = postgres_configuration.make_connection()
     query = 'select distinct tweet_id from tweet where position_in_conversation = \'start\''
     cursor.execute(query)
     results = cursor.rowcount

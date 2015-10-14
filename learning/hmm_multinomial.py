@@ -20,6 +20,7 @@ def calculate_hmm_m(training_set, test_set, taxonomy, cursor, connection):
     model = MultinomialHMM(n_components=n_states)
     model._set_startprob(start_probability)
     model._set_transmat(transition_probability)
+    # print model.transmat_
     con_pathes, test_obs, emissions = extract_features_test_set(test_set, taxonomy, feature_list, emissions)
 
     model._set_emissionprob(emissions)

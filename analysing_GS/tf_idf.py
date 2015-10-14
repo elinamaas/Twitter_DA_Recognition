@@ -24,10 +24,6 @@ def calculate_tf_idf(train_set):
     tokens_full = choose_word_features(tf_idf_full)
     tokens_reduced = choose_word_features(tf_idf_reduced)
     tokens__min = choose_word_features(tf_idf_min)
-    # for conversation in train_set:
-    #     for branch in conversation:
-    #         for segment in branch.branch:
-    #             segment.features.add_language_features(tokens_full, tokens_reduced, tokens__min)
     return tokens_full, tokens_reduced, tokens__min
 
 
@@ -46,11 +42,6 @@ def add_token_da_frequency(tf_full, idf_full, tf_reduced, idf_reduced, tf_min, i
     das_full.add(da_full)
     das_reduced.add(da_reduced)
     das_min.add(da_min)
-    tokens = token_appearance.keys()
-    # for token in tokens:
-    #     idf_full[da_full].add(token)
-    #     idf_reduced[da_reduced].add(token)
-    #     idf_min[da_min].add(token)
 
     for token, freq in token_appearance.iteritems():
         if token in tf_full:
@@ -106,10 +97,5 @@ def tfidf(tf_features, idf_features, das_list):
                 freq = tf_features[token][da]
             else:
                 freq = 0
-            # for token, freq in term_freq.iteritems():
-            #     nt = 0
-            #     for idf in idf_keys:
-            #         if token in idf:
-            #             nt += 1
             tfidf_dict[da][token] = freq * math.log10(len(das_list)/float(nt))
     return tfidf_dict

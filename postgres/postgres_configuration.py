@@ -23,7 +23,7 @@ def create_db():
 
         cur.execute("CREATE TABLE IF NOT EXISTS Tweet(Tweet_id BIGINT PRIMARY KEY, UserName VARCHAR(1024), "
                     "In_replay_to BIGINT, Conversation_id BIGINT, Tweet_text VARCHAR(1024), "
-                    "Annotated BOOLEAN, German Boolean, position_in_conversation e_position )")
+                    "German Boolean, position_in_conversation e_position )")
 
         cur.execute('CREATE TABLE IF NOT EXISTS Dialogue_act_full (Dialogue_act_id INTEGER PRIMARY KEY, '
                     'Dialogue_act_name VARCHAR(100), Parent_act_id INTEGER, '

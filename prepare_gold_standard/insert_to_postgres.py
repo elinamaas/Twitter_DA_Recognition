@@ -58,7 +58,7 @@ def insert_annotated_tweets_postgres(directory_path):
         print 'There are ' + str(conversation_number) + ' annotated conversations'
     else:
         #number of annotated conversation
-        conversation_number = postgres_queries.find_annotated_conversation_number()
+        conversation_number = postgres_queries.find_conversation_number()
         print 'There are ' + str(conversation_number) + ' annotated conversations'
     # return tweets_tuple
 

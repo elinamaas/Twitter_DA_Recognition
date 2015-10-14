@@ -21,21 +21,27 @@ def build_conversation_tree(parent_tweet, converasation_raw, conversation_tree):
 
 
 def build_conversation_lang(parent_tweet, converasation_raw, conversation_tree, tweets_in_conversation):
-    number_of_tweets = len(converasation_raw)
-    i = 0
-    while i < number_of_tweets:
-        tweet = converasation_raw[i]
-        # if tweet[6] is False:
-        #     print 'here'
-        if tweet[2] == parent_tweet and tweet[6] is True:
+    # number_of_tweets = len(converasation_raw)
+    # i = 0
+    for tweet in converasation_raw:
+        if tweet[2] == parent_tweet and tweet[5] is True:
             tweets_in_conversation.append(tweet[0])
             conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
             build_conversation_lang(tweet[0], converasation_raw, conversation_tree, tweets_in_conversation)
-        i += 1
+
+    # while i < number_of_tweets:
+    #     tweet = converasation_raw[i]
+    #     # if tweet[6] is False:
+    #     #     print 'here'
+    #     if tweet[2] == parent_tweet and tweet[5] is True:
+    #         tweets_in_conversation.append(tweet[0])
+    #         conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
+    #         build_conversation_lang(tweet[0], converasation_raw, conversation_tree, tweets_in_conversation)
+    #     i += 1
 
 #rebuilf conversation, take in account german tweets,with width and depth
-def conversation_regarding_language():
-    conversation_amount = postgres_queries.find_annotated_conversation_number()
+def conversation_regarding_language(cursor):
+    conversation_amount = postgres_queries.find_conversation_number(cursor)
     conversation_list = list()
     depth_dict = dict()
     depth_dict_long = dict()
@@ -44,12 +50,13 @@ def conversation_regarding_language():
     test_i = 0
     for i in range(0, conversation_amount + 1, 1):
         conversation_tree = Tree()
-        conversation = postgres_queries.find_conversation(i)
+        conversation = postgres_queries.find_conversation(i, cursor)
         test_i += len(conversation)
         for tweet in conversation:
-            if tweet[2] is None and tweet[6] is True:
+            if tweet[2] is None and tweet[5] is True:
                 conversation_tree.create_node(tweet[0], tweet[0])
-                build_conversation_lang(tweet[0], conversation, conversation_tree)
+                tweets_in_conversation = list()
+                build_conversation_lang(tweet[0], conversation, conversation_tree, tweets_in_conversation)
                 depth = conversation_tree.depth() + 1
                 number_of_tweets = len(conversation_tree.all_nodes())
                 #short/long
@@ -135,7 +142,7 @@ def delete_non_german_tweets(cursor, connection):
 
 
 def build_german_conversation(cursor):
-    conversation_amount = postgres_queries.find_annotated_conversation_number(cursor)
+    conversation_amount = postgres_queries.find_conversation_number(cursor)
     conversation_list = list()
     tweets_in_conversation = list()
     for i in range(0, conversation_amount + 1, 1):
@@ -143,7 +150,7 @@ def build_german_conversation(cursor):
         conversation = postgres_queries.find_conversation(i, cursor)
         # test_i += len(conversation)
         for tweet in conversation:
-            if tweet[2] is None and tweet[6] is True:
+            if tweet[2] is None and tweet[5] is True:
                 tweets_in_conversation.append(int(tweet[0]))
                 conversation_tree.create_node(tweet[0], tweet[0])
                 build_conversation_lang(tweet[0], conversation, conversation_tree, tweets_in_conversation)

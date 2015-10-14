@@ -40,7 +40,3 @@ def import_golden_standard_postgres(filename, cursor, connection):
             tweet.set_tokens(offset, token, da)
     insert_to_table.multiple_tweets_insert(list_of_tweets_to_be_inserted, cursor, connection)
     return list_of_tweets_to_be_inserted
-# import_golden_standard_postgres('../tokenisierung-tofix.xlsx')
-# test = 'jfjudj\''
-# print test
-# print test.replace('\'', '\'\'')
