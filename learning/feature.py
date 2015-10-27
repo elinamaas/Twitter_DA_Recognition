@@ -47,13 +47,14 @@ class Feature:
         emoticons = self.has_emoticons(utterance)
         question_words = self.has_question_word(utterance)
         first_verb, imperative = self.is_first_verb(utterance)
+        oder = self.has_word_oder(utterance)
         word_embeddings, token_appearance = self.extract_lang_features(utterance, embeddings, word_id)
         self.token_appearance = token_appearance
         self.word2vec = word_embeddings
         self.features = {'length': length, 'root_user': root_user, 'pos': position,
                          'link': link, 'question_mark': question_mark, 'exclamation_mark': exclamation_mark,
                          'hashtag': hashtag, 'emoticons': emoticons, 'question_words': question_words,
-                         'first_verb': first_verb, 'imperative': imperative}
+                         'first_verb': first_verb, 'imperative': imperative, 'oder': oder}
             # ,  'language_features': lang_features}
                          # 'word_embeddings': word_embeddings}
 
@@ -63,6 +64,14 @@ class Feature:
             return pos
         else:
             return 3
+
+    def has_word_oder(self, utterance):
+        utterance = utterance.lower()
+        tokens = utterance.split(' ')
+        for token in tokens:
+            if token == 'oder':
+                return True
+        return False
 
     def extract_lang_features(self, utterance, embeddings, word_id):
         shape = (64,)
@@ -212,4 +221,7 @@ class Feature:
             return utterance.split(' ', 1)[1]
         else:
             return utterance
+
+
+
 

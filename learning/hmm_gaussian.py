@@ -181,9 +181,11 @@ def convert_features(feature, taxonomy):
     feature_set.append(convert_values(feature.features['question_words']))
     feature_set.append(convert_values(feature.features['first_verb']))
     feature_set.append(convert_values(feature.features['imperative']))
+    feature_set.append(convert_values(feature.features['oder']))
 
     # for v in feature.word2vec:
     #     feature_set.append(v)
+    # language features form tf-idf
     # if taxonomy == 'full':
     #     language_features = feature.language_features_full
     # elif taxonomy == 'reduced':

@@ -90,7 +90,8 @@ def segment2features(branch, i, taxonomy):
         'emoticons=%s' % feature.features['emoticons'],
         'question_words=%s' % feature.features['question_words'],
         'first_verb=%s' % feature.features['first_verb'],
-        'imperative=%s' % feature.features['imperative'] #,
+        'imperative=%s' % feature.features['imperative'],
+        'oder=%s' % feature.features['oder']
         # 'embeddings=%s' % feature.word2vec,
         # 'lang_features=%s' % language_features
     ]
@@ -108,7 +109,8 @@ def segment2features(branch, i, taxonomy):
             '-1emoticons=%s' % feature1.features['emoticons'],
             '-1question_words=%s' % feature1.features['question_words'],
             '-1first_verb=%s' % feature1.features['first_verb'],
-            '-1imperative=%s' % feature1.features['imperative'] #,
+            '-1imperative=%s' % feature1.features['imperative'],
+            '-1oder=%s' % feature1.features['oder'] #,
             # '-1embeddings=%s' % feature1.word2vec,
             # 'lang_features=%s' % language_features
         ])
@@ -128,7 +130,8 @@ def segment2features(branch, i, taxonomy):
             '+1emoticons=%s' % feature1.features['emoticons'],
             '+1question_words=%s' % feature1.features['question_words'],
             '+1first_verb=%s' % feature1.features['first_verb'],
-            '+1imperative=%s' % feature1.features['imperative']#,
+            '+1imperative=%s' % feature1.features['imperative'],
+            '+1oder=%s' % feature1.features['oder']#,
             # '+1embeddings=%s' % feature1.word2vec,
             # 'lang_features=%s' % language_features
         ])

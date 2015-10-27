@@ -17,12 +17,12 @@ def calculate_hmm_m(training_set, test_set, taxonomy, cursor, connection):
 
     feature_list, emissions = extract_features_training_set(training_set, taxonomy, states)
 
-    model = MultinomialHMM(n_components=n_states)
-    model._set_startprob(start_probability)
-    model._set_transmat(transition_probability)
     # print model.transmat_
     con_pathes, test_obs, emissions = extract_features_test_set(test_set, taxonomy, feature_list, emissions)
 
+    model = MultinomialHMM(n_components=n_states)
+    model._set_startprob(start_probability)
+    model._set_transmat(transition_probability)
     model._set_emissionprob(emissions)
     da_predictions(test_obs, model, con_pathes, states, da_id_taxonomy, taxonomy, cursor, connection)
 
@@ -31,35 +31,7 @@ def update_emissions(emissions):
     new_emissions = np.hstack((emissions, np.zeros((emissions.shape[0], 1), dtype=emissions.dtype)))
     return new_emissions
 
-# states = ["Rainy", "Sunny"]
-# n_states = len(states)
-#
-# observations = ["walk", "shop", "clean"]
-# n_observations = len(observations)
-#
-# start_probability = np.array([0.6, 0.4])
-#
-# transition_probability = np.array([
-#   [0.7, 0.3],
-#   [0.4, 0.6]
-# ])
-#
-# emission_probability = np.array([
-#   [0.1, 0.4, 0.5],
-#   [0.6, 0.3, 0.1]
-# ])
-#
-# model = hmm.MultinomialHMM(n_components=n_states)
-# model._set_startprob(start_probability)
-# model._set_transmat(transition_probability)
-# model._set_emissionprob(emission_probability)
-#
-# # predict a sequence of hidden states based on visible states
-# bob_says = [0, 2, 1, 1, 2, 0]
-# logprob, alice_hears = model.decode(bob_says, algorithm="viterbi")
-# print "Bob says:", ", ".join(map(lambda x: observations[x], bob_says))
-# print "Alice hears:", ", ".join(map(lambda x: states[x], alice_hears))
-#
+
 def extract_features_training_set(training_set, taxonomy, states):
     feature_list = list()
     emissions = collections.defaultdict(dict)
@@ -136,9 +108,11 @@ def convert_feature_to_list(feature, taxonomy):
     feature_set.append(feature.features['question_words'])
     feature_set.append(feature.features['first_verb'])
     feature_set.append(feature.features['imperative'])
+    feature_set.append(feature.features['oder'])
 
     # for v in feature.word2vec:
     #     feature_set.append(v)
+    # language features from tf-idf
     # if taxonomy == 'full':
     #     language_features = feature.language_features_full
     # elif taxonomy == 'reduced':
