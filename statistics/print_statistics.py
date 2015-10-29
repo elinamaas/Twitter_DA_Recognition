@@ -16,13 +16,14 @@ def stats_for_gold_standard():
     for taxonomy in taxonomies:
         print taxonomy + ' taxonomy'
         analysis.da_unigrams(taxonomy, cursor)
-        analysis.length_distribution(taxonomy, cursor)
+        # print 'lengh distributation'
+        # analysis.length_distribution_in_da(taxonomy, cursor)
         print 'bigrams'
         analysis.da_bigrams(conversations_list, taxonomy, cursor)
-        print 'bigram in long conversations'
-        analysis.da_bigrams(long_conversations_list, taxonomy, cursor)
-        print 'bigrams in short conversations'
-        analysis.da_bigrams(short_conversations_list, taxonomy, cursor)
+        # print 'bigram in long conversations'
+        # analysis.da_bigrams(long_conversations_list, taxonomy, cursor)
+        # print 'bigrams in short conversations'
+        # analysis.da_bigrams(short_conversations_list, taxonomy, cursor)
 
 
 stats_for_gold_standard()

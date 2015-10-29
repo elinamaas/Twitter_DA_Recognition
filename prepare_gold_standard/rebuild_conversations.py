@@ -21,25 +21,13 @@ def build_conversation_tree(parent_tweet, converasation_raw, conversation_tree):
 
 
 def build_conversation_lang(parent_tweet, converasation_raw, conversation_tree, tweets_in_conversation):
-    # number_of_tweets = len(converasation_raw)
-    # i = 0
     for tweet in converasation_raw:
         if tweet[2] == parent_tweet and tweet[5] is True:
             tweets_in_conversation.append(tweet[0])
             conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
             build_conversation_lang(tweet[0], converasation_raw, conversation_tree, tweets_in_conversation)
 
-    # while i < number_of_tweets:
-    #     tweet = converasation_raw[i]
-    #     # if tweet[6] is False:
-    #     #     print 'here'
-    #     if tweet[2] == parent_tweet and tweet[5] is True:
-    #         tweets_in_conversation.append(tweet[0])
-    #         conversation_tree.create_node(tweet[0], tweet[0], parent=parent_tweet)
-    #         build_conversation_lang(tweet[0], converasation_raw, conversation_tree, tweets_in_conversation)
-    #     i += 1
 
-#rebuilf conversation, take in account german tweets,with width and depth
 def conversation_regarding_language(cursor):
     conversation_amount = postgres_queries.find_conversation_number(cursor)
     conversation_list = list()
@@ -129,6 +117,31 @@ def build_conversation_from_mongo(collection_name):
         conversation_list.append(conversation_tree)
     return conversation_list
 
+
+# def build_conversation_for_writing_in_excel(tweets_list):
+#     tweet_ids_list = list()
+#     conversation_list = list()
+#     records = mongoDBQueries.find_all_conversation_id(collection_name)
+#     for conversation_id in records:
+#         conversation_tree = Tree()
+#         help_dictionary = dict()
+#         conversation_id = int(conversation_id)
+#         tweets = mongoDBQueries.find_by_conversation_id(collection_name, conversation_id)
+#         for tweet in tweets:
+#             tweet_id = str(tweet['tweet_id']).replace(' ', '')
+#             if tweet_id not in tweet_ids_list:
+#                 tweet_ids_list.append(tweet_id)
+#                 text_id = tweet['text_id']
+#                 if text_id == 0:
+#                     conversation_tree.create_node(tweet_id, tweet_id)
+#                     help_dictionary[text_id] = tweet_id
+#                 else:
+#                     # text_id = tweet['text_id']
+#                     parent_tweet = help_dictionary[text_id-1]
+#                     help_dictionary[text_id] = tweet_id
+#                     conversation_tree.create_node(tweet_id, tweet_id, parent=parent_tweet)
+#         conversation_list.append(conversation_tree)
+#     return conversation_list
 
 def delete_non_german_tweets(cursor, connection):
     tweets_in_conversation, conversation_list = build_german_conversation(cursor)

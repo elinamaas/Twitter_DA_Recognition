@@ -3,7 +3,7 @@ import math, operator
 from collections import defaultdict
 
 
-def calculate_tf_idf(train_set):
+def calculate_tf_idf(train_set, settings):
     tf_full = defaultdict(dict)
     idf_full = defaultdict(set)
     tf_reduced = defaultdict(dict)
@@ -21,9 +21,9 @@ def calculate_tf_idf(train_set):
     tf_idf_full = tfidf(tf_full, idf_full, das_full)
     tf_idf_reduced = tfidf(tf_reduced, idf_reduced, das_full)
     tf_idf_min = tfidf(tf_min, idf_min, das_full)
-    tokens_full = choose_word_features(tf_idf_full)
-    tokens_reduced = choose_word_features(tf_idf_reduced)
-    tokens__min = choose_word_features(tf_idf_min)
+    tokens_full = choose_word_features(tf_idf_full, settings[0])
+    tokens_reduced = choose_word_features(tf_idf_reduced, settings[0])
+    tokens__min = choose_word_features(tf_idf_min, settings[0])
     return tokens_full, tokens_reduced, tokens__min
 
 
@@ -72,14 +72,15 @@ def add_token_da_frequency(tf_full, idf_full, tf_reduced, idf_reduced, tf_min, i
                 tf_min[token][da_min] = freq
 
 
-def choose_word_features(tfidf):
+def choose_word_features(tfidf, topX):
     words_set = set()
     for da, tfidf_value in tfidf.iteritems():
         sorted_x = sorted(tfidf_value.items(), key=operator.itemgetter(1))
         sorted_x.reverse()
         i = 0
         for tf in sorted_x:
-            if i == 100:
+            # set the amount of words to be checked
+            if i == topX:
                 break
             else:
                 words_set.add(tf[0])

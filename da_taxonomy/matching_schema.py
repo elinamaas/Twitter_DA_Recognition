@@ -1,6 +1,6 @@
 from postgres import postgres_configuration
 from postgres.postgres_queries import find_all_records, find_da_by_name, find_da_by_id
-from da_recognition import dialogue_acts_taxonomy
+from da_taxonomy import dialogue_acts_taxonomy
 
 __author__ = 'snownettle'
 #we have three types of DIT++ schema. But the annotated data was only for

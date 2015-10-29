@@ -9,7 +9,7 @@ from collections import defaultdict
 import xlsxwriter
 import numpy as np
 
-from da_recognition import dialogue_acts_taxonomy
+from da_taxonomy import dialogue_acts_taxonomy
 
 
 def chance_corrected_coefficient_categories(list_of_tweets, ontology): #overall_observed_agreement
@@ -19,7 +19,7 @@ def chance_corrected_coefficient_categories(list_of_tweets, ontology): #overall_
     seg_confusion_matrix = collections.defaultdict(list)
     for tweet in list_of_tweets:
         sum_arg_category, i, seg_confusion_matrix = tag_pro_segments_agreement(tweet, sum_arg_category, i,
-                                                                number_of_assignments_to_category, seg_confusion_matrix)
+                                                    number_of_assignments_to_category, seg_confusion_matrix, ontology)
     overall_observed_agreement = sum_arg_category/float(i)
     expected_agreement = ea(number_of_assignments_to_category, i)
     ccc = (overall_observed_agreement - expected_agreement)/float(1 - expected_agreement)
@@ -48,9 +48,14 @@ def binomial(x, y):
     return binom
 
 
-def tag_pro_segments_agreement(tweet, sum_arg, i, number_of_assignments_to_category, seg_confusion_matrix):
+def tag_pro_segments_agreement(tweet, sum_arg, i, number_of_assignments_to_category, seg_confusion_matrix, taxonomy):
     segments = tweet.get_source_segmentation() #set()
-    tokens = tweet.get_tags_full()
+    if taxonomy == 'full':
+        tokens = tweet.get_tags_full()
+    elif taxonomy == 'reduced':
+        tokens = tweet.get_tags_reduced()
+    else:
+        tokens = tweet.get_tags_minimal()
     for segment in segments:
         start_offset = int(segment.split(':')[0])
         tags_variations = tokens[start_offset]
@@ -72,11 +77,16 @@ def tag_pro_segments_agreement(tweet, sum_arg, i, number_of_assignments_to_categ
     return sum_arg, i, seg_confusion_matrix
 
 
-def confusion_matrix(segmentation_agreement, ontology):
+def confusion_matrix(segmentation_agreement, taxonomy):
     segments_list = []
     da_list = []
     segments_list.extend(range(1, len(segmentation_agreement) + 1, 1))
-    da_tree = dialogue_acts_taxonomy.build_da_taxonomy_full()
+    if taxonomy == 'full':
+        da_tree = dialogue_acts_taxonomy.build_da_taxonomy_full()
+    elif taxonomy == 'reduced':
+        da_tree = dialogue_acts_taxonomy.build_da_taxonomy_reduced()
+    else:
+        da_tree = dialogue_acts_taxonomy.build_da_taxonomy_minimal()
     nodes = da_tree.all_nodes()
     matrix_tuple = list()
     for node in nodes:
@@ -84,7 +94,7 @@ def confusion_matrix(segmentation_agreement, ontology):
     da_list = sorted(da_list)
     da_list.insert(0, "_segments")
     tuple_zero = list()
-    for i in range(0, 58, 1):
+    for i in range(0, len(nodes)+1, 1):
         tuple_zero.append(0)
     for segment, agreements in segmentation_agreement.iteritems(): # check if sorted!
         current_tuple = list(tuple_zero)
@@ -95,25 +105,25 @@ def confusion_matrix(segmentation_agreement, ontology):
                 current_tuple[i] = agreement
                 # matrix_tuple = MatrixTuple
         matrix_tuple.append(current_tuple)
-    write_to_file(matrix_tuple, da_list, '../DATA/confusion_matrix_' +ontology + '.xlsx')
     error_matrix = make_error_matrix(matrix_tuple, da_list)
+    write_to_file(matrix_tuple, da_list, 'DATA/error_matrix/confusion_matrix_' + taxonomy + '.xlsx')
     i = 1
     for error_line in error_matrix:
         error_line.insert(0, da_list[i])
         i += 1
-    write_to_file(error_matrix, da_list, '../DATA/error_matrix_' + ontology + '.xlsx')
+    write_to_file(error_matrix, da_list, 'DATA/error_matrix/' + taxonomy + '.xlsx')
 
 
 def make_error_matrix(matrix_tuple, da_list):
     error_matrix = list()
     tuple_zero = list()
     # errors = list()
-    for i in range(0, 57, 1):
+    for i in range(0, len(da_list)-1, 1):
         tuple_zero.append(0)
-    for i in range(0, 57, 1):
+    for i in range(0, len(da_list)-1, 1):
         error_matrix.append(list(tuple_zero))
     for tuple_old in matrix_tuple:
-        if len(tuple_old) == 58:
+        if len(tuple_old) == len(da_list):
             del tuple_old[0]
         values = np.array(tuple_old)
         error_index = np.where(values != 0)
@@ -197,10 +207,6 @@ def token_label_agreement(tweet, sum_arg_segmentation, j, dict_ea):
                 for label_count in existing_label:
                     if 'B' in label_count:
                         label_count['B'] += count
-            # if 'B' in existing_label[0] or 'B' in existing_label[0]:
-            #     for label_count in existing_label:
-            #         if 'B' in label_count:
-            #             label_count['B'] += count
             else:
                 tokens_dict[start_offset].append(labels_dict.copy())
         else:

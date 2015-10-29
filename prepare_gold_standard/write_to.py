@@ -72,9 +72,11 @@ def write_to_xlsx_file_final(list_of_tweets, file_name):
                 row += 1
         row += 1
     workbook.close()
+    # add_user_information('../tokenisierung-tofix.xlsx', '../goldenStandard.xlsx')
 
 
-def write_to_xls_pure_annotation(list_of_tweet_tuple, file_name):
+def write_to_xls_pure_annotation(file_name):
+    list_of_tweet_tuple = pure_annotation()
     workbook = xlsxwriter.Workbook(file_name)
     worksheet = workbook.add_worksheet()
     row = 1

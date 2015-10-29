@@ -7,77 +7,76 @@ import operator
 
 from mongoDB import mongoDBQueries
 from prepare_gold_standard.annotated_tweet_class import AnnotatedTweetEdit
-from da_recognition.dialogue_acts_taxonomy import find_common_parent, check_related_tags
+from da_taxonomy.dialogue_acts_taxonomy import find_common_parent, check_related_tags
 
 
-def tweets_to_be_reviewed(collection, ontology):
+def tweets_to_be_reviewed(collection, german_tweets):
     records = mongoDBQueries.find_all(collection)
     list_of_tweets_with_tags = []
-    unigrams_dict = dict()
+    unigrams_full = dict()
+    unigrams_reduced = dict()
+    unigrams_minimal = dict()
     for record in records:
         tweet_id = record['tweet_id']
-        text_id = record['text_id']
-        text = record['text']
-        tweet = AnnotatedTweetEdit.check_if_tweet_exists(list_of_tweets_with_tags, tweet_id, text_id, text)
-        if ontology == 'full':
-            tokens, word_dictionary, source_tags = find_tokens_segmentation_full(record)
-        elif ontology == 'reduced':
-            tokens, word_dictionary, source_tags = find_tokens_segmentation_reduced(record)
-        else:
-            tokens, word_dictionary, source_tags = find_tokens_segmentation_minimal(record)
+        if int(tweet_id) in german_tweets:
+            text_id = record['text_id']
+            text = record['text']
+            tweet = AnnotatedTweetEdit.check_if_tweet_exists(list_of_tweets_with_tags, tweet_id, text_id, text)
 
-        tweet = tweet.set_word(word_dictionary)
-        previous_tag = ''
-        # for token in tokens:
-        for offset, name in tokens.iteritems():
-            if previous_tag is list:
-                if type(name) is list:
-                        for n in name:
-                            if n not in previous_tag:
-                                if n in unigrams_dict:
-                                    unigrams_dict[n] += 1
-                                else:
-                                    unigrams_dict[n] = 1
+            token_full, word_dictionary, source_tags = find_tokens_segmentation_full(record)
+            token_reduced = find_tokens_segmentation_reduced(record)
+            token_min = find_tokens_segmentation_minimal(record)
 
-                else:
-                    if name not in previous_tag:
-                        if name in unigrams_dict:
-                            unigrams_dict[name] += 1
-                        else:
-                            unigrams_dict[name] = 1
+            tweet = tweet.set_word(word_dictionary)
 
-            else:
-                if previous_tag != name:
-                    if type(name) is list:
-                        for n in name:
-                            if n in unigrams_dict:
-                                unigrams_dict[n] += 1
-                            else:
-                                unigrams_dict[n] = 1
-                    else:
-                        if name in unigrams_dict:
-                            unigrams_dict[name] += 1
-                        else:
-                            unigrams_dict[name] = 1
-            previous_tag = name
+            build_unigrams(token_full, unigrams_full)
+            build_unigrams(token_reduced, unigrams_reduced)
+            build_unigrams(token_min, unigrams_minimal)
 
-        tweet = tweet.add_tag_full(tokens)
-        # tweet = tweet.add_segmentation(segments)
-        tweet.add_source_segments(source_tags) #set segmentation for raw annotated tweets
-        # tweet.set_source_segmentation()
-        if tweet not in list_of_tweets_with_tags:
-            list_of_tweets_with_tags.append(tweet)
+            tweet = tweet.add_tag_full(token_full)
+            tweet = tweet.add_tag_reduced(token_reduced)
+            tweet = tweet.add_tag_minimal(token_min)
+            tweet.add_source_segments(source_tags) #set segmentation for raw annotated tweets
+            if tweet not in list_of_tweets_with_tags:
+                list_of_tweets_with_tags.append(tweet)
+    print_unigrams(unigrams_full, 'full')
+    print_unigrams(unigrams_reduced, 'reduced')
+    print_unigrams(unigrams_minimal, 'minimal')
+    return list_of_tweets_with_tags
+
+
+def print_unigrams(unigrams_dict, taxonomy):
     sorted_x = sorted(unigrams_dict.items(), key=operator.itemgetter(1))
     sorted_x.reverse()
-    evaluation_data = list()
-    # for tag_name, occurancy in sorted_x.iteritems():
-    #     evaluation_data.append([tag_name, occurancy])
-    # print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-    print '\n'+ 'UNIGRAMS FOR RAW ANNOTATION' + '\n'
+    print '\n'+ 'UNIGRAMS FOR RAW ANNOTATION FOR' + taxonomy.capitalize() + 'TAXONOMY' + '\n'
     # print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
     print tabulate(sorted_x, headers=['dialogue act name', 'frequency'])
     print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-    return list_of_tweets_with_tags
+
+
+def build_unigrams(tokens, unigrams_dict):
+    previous_tag = ''
+    for offset, name in tokens.iteritems():
+        if previous_tag is list:
+            add_unigram(name, unigrams_dict)
+        else:
+            if previous_tag != name:
+                add_unigram(name, unigrams_dict)
+        previous_tag = name
+
+
+def add_unigram(name, unigrams_dict):
+    if type(name) is list:
+        for n in name:
+            if n in unigrams_dict:
+                unigrams_dict[n] += 1
+            else:
+                unigrams_dict[n] = 1
+    else:
+        if name in unigrams_dict:
+            unigrams_dict[name] += 1
+        else:
+            unigrams_dict[name] = 1
 
 
 def find_tokens_segmentation_full(record):
@@ -85,12 +84,7 @@ def find_tokens_segmentation_full(record):
     text = record['text']
     tokens = text.split(' ')
     tags_dictionary = {}
-    # previous_tag = ''
-    # start_offset = 0
-    # end_offset = 0
     source_tags = defaultdict(list)
-    # tags_occuracy = defaultdict(list)
-    # offsets_list = list()
     for i in range(4, len(tokens)+1):
         tag = str(record[str(i)][1])
         word = record[str(i)][0]
@@ -98,13 +92,10 @@ def find_tokens_segmentation_full(record):
         if tag != '0' and '|' not in tag:
             source_tags[tag].append(i)
             tag = re.split('-', tag)[1]
-            # if tag != '_' and tag != 'Wurst' and tag != 'NEIN' and tag != 'Ironie':
             tags_dictionary[i] = tag
-                # tags_occuracy[tag].append(i)
             source_tags[tag].append(i)
         elif '|' in tag:
             source_da = tag.split('|')
-            # j = 0
             for s in source_da:
                 source_tags[s].append(i)
 
@@ -117,75 +108,37 @@ def find_tokens_segmentation_full(record):
 
 
 def find_tokens_segmentation_reduced(record):
-    word_dictionary = dict()
     text = record['text']
     tokens = text.split(' ')
     tags_dictionary = {}
-    # previous_tag = ''
-    # start_offset = 0
-    # end_offset = 0
-    source_tags = defaultdict(list)
-    # tags_occuracy = defaultdict(list)
-    # offsets_list = list()
     for i in range(4, len(tokens)+1):
         tag = str(record[str(i)][2])
-        word = record[str(i)][0]
-        word_dictionary[i] = word
         if tag != '0' and '|' not in tag:
-            source_tags[tag].append(i)
             tag = re.split('-', tag)[1]
-            # if tag != '_' and tag != 'Wurst' and tag != 'NEIN' and tag != 'Ironie':
             tags_dictionary[i] = tag
-                # tags_occuracy[tag].append(i)
-            source_tags[tag].append(i)
         elif '|' in tag:
-            source_da = tag.split('|')
-            # j = 0
-            for s in source_da:
-                source_tags[s].append(i)
-
             tags_list = spilt_tags(tag)
             tags_dictionary[i] = tags_list
         elif tag == '0':
             tags_dictionary[i] = tag
-            source_tags[tag].append(i)
-    return tags_dictionary, word_dictionary, source_tags
+    return tags_dictionary
 
 
 def find_tokens_segmentation_minimal(record):
-    word_dictionary = dict()
     text = record['text']
     tokens = text.split(' ')
     tags_dictionary = {}
-    # previous_tag = ''
-    # start_offset = 0
-    # end_offset = 0
-    source_tags = defaultdict(list)
-    # tags_occuracy = defaultdict(list)
-    # offsets_list = list()
     for i in range(4, len(tokens)+1):
         tag = str(record[str(i)][3])
-        word = record[str(i)][0]
-        word_dictionary[i] = word
         if tag != '0' and '|' not in tag:
-            source_tags[tag].append(i)
             tag = re.split('-', tag)[1]
-            # if tag != '_' and tag != 'Wurst' and tag != 'NEIN' and tag != 'Ironie':
             tags_dictionary[i] = tag
-                # tags_occuracy[tag].append(i)
-            source_tags[tag].append(i)
         elif '|' in tag:
-            source_da = tag.split('|')
-            # j = 0
-            for s in source_da:
-                source_tags[s].append(i)
-
             tags_list = spilt_tags(tag)
             tags_dictionary[i] = tags_list
         elif tag == '0':
             tags_dictionary[i] = tag
-            source_tags[tag].append(i)
-    return tags_dictionary, word_dictionary, source_tags
+    return tags_dictionary
 
 
 def majority_vote(tweets_list):
@@ -235,14 +188,8 @@ def spilt_tags(tags):
     tags_name = tags.split('|')
     tags_list = list()
     for i in range(0, len(tags_name)):
-        # if 'O-_' != tags_name[i]: #maybe '0'?
         tag_name = re.split('-', tags_name[i])[1]
-            # if tag_name != 'NEIN' and tag_name != 'Wurst' and tag_name != 'Ironie':
         tags_list.append(tag_name)
-            # else:
-            #     tags_list.append('0')
-        # else:
-        #     tags_list.append('0')
     return tags_list
 
 

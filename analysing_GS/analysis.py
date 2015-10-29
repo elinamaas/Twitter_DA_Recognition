@@ -4,6 +4,7 @@ from postgres import postgres_queries, postgres_configuration
 from collections import defaultdict
 from tabulate import tabulate
 from learning.feature import Feature as f
+import operator
 from plots import plots_for_gs
 
 
@@ -13,7 +14,7 @@ def da_unigrams(taxonomy, cursor):
         print str(result[0]) + '\t:' + str(result[1])
 
 
-def length_distribution(taxonomy, cursor):
+def length_distribution_in_da(taxonomy, cursor):
     da_length_distribution = defaultdict(dict)
     results = postgres_queries.find_da_offset_taxonomy(taxonomy, cursor)
     for result in results:
@@ -66,7 +67,9 @@ def da_bigrams(conversations_list, taxonomy, cursor):
         previous_da = extract_bigram_info(root, previous_da, bigrams, taxonomy,  cursor)
         previous_da = children_bigrams(root, previous_da, bigrams, taxonomy, cursor)
         add_bigram('<E>', previous_da, bigrams)
-    print bigrams
+    for da, follwings in bigrams.iteritems():
+        for da_f, freq in follwings.iteritems():
+            print da + ' ' + da_f + ' ' + str(freq)
 
 
 def extract_bigram_info(tweet_id, previous_da, bigrams, taxonomy,  cursor):
@@ -135,7 +138,9 @@ def deep_distribution(conversation_list):
             else:
                 distribution[depth] = 1
     # plots_for_gs.depth_distribution_plot(distribution)
+    distribution = sorted(distribution.items(), key=operator.itemgetter(0))
     print 'Depth distribution'
+
     print distribution
 
 

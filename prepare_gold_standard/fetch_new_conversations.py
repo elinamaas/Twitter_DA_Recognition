@@ -6,7 +6,7 @@ __author__ = 'snownettle'
 from twitter_objects import conversation
 from mongoDB import mongoDB_configuration, mongoDBQueries
 import xlsxwriter
-from da_recognition import dialogue_acts_taxonomy
+from da_taxonomy import dialogue_acts_taxonomy
 
 
 # raw
@@ -93,25 +93,6 @@ def write_to_file(conversation_list, file_name):
         row += 1
 
     workbook.close()
-#
-#
-# def write_da_in_new_column(labels, row, col, worksheet):
-#     for da_label in labels:
-#         worksheet.write(row, col, da_label.tag)
-#         row += 1
-#
-#
-# def find_next_level(labels, row, col, worksheet, taxonomy):
-#     # next_level = None
-#     for label in labels:
-#         next_level = taxonomy.children(label.tag)
-#         write_da_in_new_column(next_level, row, col, worksheet)
-#         col += 1
-#     for label in labels:
-#         next_level = taxonomy.children(label.tag)
-#         find_next_level(next_level, row, col, worksheet, taxonomy)
-#         col += 1
-#     col +=1
 
 
 def find_children(collection, conversation_tree, parent_tweet, list_of_tweets):
@@ -123,16 +104,3 @@ def find_children(collection, conversation_tree, parent_tweet, list_of_tweets):
         list_of_tweets.append(tweet)
         find_children(collection, conversation_tree, tweet, list_of_tweets)
 
-
-
-
-
-
-
-# def build_conversation_tree()
-# short, long = build_conversation()
-# # conversation_list = short + long
-# file_name = '../output/short_conversations.xls'
-# write_to_file(short, file_name)
-# file_name = '../output/long_conversations.xls'
-# write_to_file(long, file_name)

@@ -2,9 +2,16 @@ __author__ = 'snownettle'
 
 from mongoDB import mongoDBQueries, mongoDB_configuration
 from treelib import Tree
-from postgres import postgres_queries
+from postgres import postgres_queries, postgres_configuration
 from prepare_gold_standard import rebuild_conversations
 
+
+def gold_standard_stats(cursor):
+    tweets = len(postgres_queries.find_all_tweets(cursor))
+    segments = len(postgres_queries.find_all_records(postgres_configuration.segmentationTable, cursor))
+    conversations = postgres_queries.find_conversation_number(cursor)
+    print 'There are ' +str(segments) + ' segments in '+ str(tweets) + ' tweets that make  ' \
+          + str(conversations)  + ' conversations'
 
 def number_of_annotated_tweet(list_of_tweets):
     print 'There are ', len(list_of_tweets), ' tweets annotated tweets by linguistic students in DB'
@@ -150,3 +157,16 @@ def types_of_conversation():
         print depth, '\t', count
 
     return conversation_list
+
+
+# def segments_distribution(cursor):
+#     tweet_list = postgres_queries.find_all_tweets(cursor)
+#     segments_dist = dict()
+#     for tweet in tweet_list:
+#         segments = len(postgres_queries.find_segments(tweet[0], cursor))
+#         if segments in segments_dist:
+#             segments_dist[segments] += 1
+#         else:
+#             segments_dist[segments] = 1
+#     for segments, freq in segments_dist.iteritems():
+#         print str(segments) + ' segments in ' + str(freq) + ' tweets'

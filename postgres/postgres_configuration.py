@@ -25,6 +25,7 @@ def create_db():
                     "In_replay_to BIGINT, Conversation_id BIGINT, Tweet_text VARCHAR(1024), "
                     "German Boolean, position_in_conversation e_position )")
 
+
         cur.execute('CREATE TABLE IF NOT EXISTS Dialogue_act_full (Dialogue_act_id INTEGER PRIMARY KEY, '
                     'Dialogue_act_name VARCHAR(100), Parent_act_id INTEGER, '
                     'FOREIGN KEY (Parent_act_id) REFERENCES Dialogue_act_full(Dialogue_act_id))')
@@ -95,5 +96,11 @@ def check_if_exists_prediction_table(cursor):
         return False
     else:
         return True
+
+
+def truncate_tweet_table(connection, cursor):
+    query = 'TRUNCATE TABLE tweet CASCADE'
+    cursor.execute(query)
+    connection.commit()
 
 

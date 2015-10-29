@@ -228,6 +228,23 @@ def find_all_tweet_texts(cursor):
     return results
 
 
+def find_all_tweets_id(cursor):
+    query = 'select tweet_id from tweet'
+    cursor.execute(query)
+    results = cursor.fetchall()
+    tweets_list = list()
+    for result in results:
+        tweets_list.append(int(result[0]))
+    return tweets_list
+
+
+def find_tweet_by_id(tweet_id, cursor):
+    query = 'select tweet_id from tweet where tweet_id = ' + tweet_id
+    cursor.execute(query)
+    results = cursor.fetchall()
+    return results[0]
+
+
 def find_all_records(table_name, cursor):
     query = 'select * from ' + table_name
     cursor.execute(query)

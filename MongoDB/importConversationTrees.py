@@ -1,9 +1,5 @@
 __author__ = 'snownettle'
 import json
-from twitter_objects.conversation import build_conversation
-from mongoDB import mongoDB_configuration
-
-# def importConversations(collection, conversations):
 
 
 def import_conversations(collection, conversations):
@@ -37,10 +33,3 @@ def find_children(conversation, parent_tweet_id, data):
         for child in list_of_children:
             find_children(conversation, child, data)
 
-
-# collectionRawData = mongoDB_configuration.get_collection('DARecognition', 'rawTwitterData')
-# collectionConversationTree = mongoDB_configuration.get_collection('DARecognition', 'conversationTree')
-# print 'Start building conversation trees...'
-# conversations = build_conversation(collectionRawData)
-# print 'Start inserting in conversationTree collection...'
-# import_conversations(collectionConversationTree, conversations)

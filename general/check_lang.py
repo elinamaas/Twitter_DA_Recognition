@@ -31,6 +31,4 @@ def check_german(tweet_text):
     else:
         return False
 
-# check_german('ich mache ein hause')
-
 

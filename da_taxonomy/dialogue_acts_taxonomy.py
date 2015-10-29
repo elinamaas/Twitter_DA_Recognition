@@ -165,19 +165,4 @@ def build_taxonomy(taxonomy_name):
         return build_da_taxonomy_reduced()
     else:
         return build_da_taxonomy_minimal()
-# tree = build_da_taxonomy()
-# a = tree.all_nodes()
-# print tree.depth()
-# for node in a:
-#     print node.tag
-# root = tree.root
-# children =  tree.children(root)
-# for child in children:
-#     print child.tag
-# print type(root)
-# print len(tree.all_nodes())
-
-
-
-
 

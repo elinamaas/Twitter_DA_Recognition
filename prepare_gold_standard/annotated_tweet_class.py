@@ -6,6 +6,8 @@ class AnnotatedTweetEdit:
     def __init__(self, tweet_id, text_id, text):
         self.tweet_id = tweet_id
         self.text_id = text_id
+        # self.conversation_id = conversation_id
+        # self.parent_id = parent_id # if root: parent_id = 0 0
         self.tags_full = collections.defaultdict(dict) #tags for particular offset
         self.tags_reduced = collections.defaultdict(dict) #tags for particular offset
         self.tags_minimal = collections.defaultdict(dict) #tags for particular offset
@@ -150,9 +152,11 @@ class AnnotatedTweetEdit:
         else:
             return False
 
-    # def n(self, offset, da):
-    #     tag = self.tags[offset]
-    #     del tag[da]
+    # def get_conversation_id(self):
+    #     return self.conversation_id
+    #
+    # def get_parent_id(self):
+    #     return self.parent_id
 
     def find_tweet_id(self, tweet_id):
         if self.tweet_id == tweet_id:
@@ -239,6 +243,14 @@ class AnnotatedTweet: #for final version, after every merging
         self.tweet_text = tweet_text
         self.segments = dict() # offset: DA
         self.tokens = dict() #offset:{token:da}
+        # self.conversation_id = conversation_id
+        # self.parent_id = parent_id
+
+    # def get_conversation_id(self):
+    #     return self.conversation_id
+    #
+    # def get_parent_id(self):
+    #     return self.parent_id
 
     def get_tweet_id(self):
         return self.tweet_id

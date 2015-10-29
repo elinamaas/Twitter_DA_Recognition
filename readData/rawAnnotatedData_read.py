@@ -1,4 +1,4 @@
-import da_recognition.matching_schema
+import da_taxonomy.matching_schema
 
 __author__ = 'snownettle'
 import glob
@@ -9,13 +9,14 @@ import re
 from prepare_gold_standard import annotated_tweet_class, write_to
 from postgres import insert_to_table, postgres_queries, postgres_configuration
 from mongoDB import importData
-from da_recognition import matching_schema
+from da_taxonomy import matching_schema
 from statistics import annotatedData_stat
+import copy
 
 
 #read original annotated data, import to mongoDB
 def import_annotated_docs(directory_path, collection_annotated_data):
-    merged_ontologies = da_recognition.matching_schema.merge_ontologies()
+    merged_ontologies = da_taxonomy.matching_schema.merge_ontologies()
     conversation_id = 0
     save_conversation = False
     data = {}
@@ -167,7 +168,9 @@ def check_if_consistent(row):
 
 # second round of annotation, annotated missing twwets from merging.
 #insert to postgres
-def concatenate_done_tweets():
+
+
+def concatenate_done_tweets(cursor, connection):
     #last step- read and write to one file
     # 1st till id=406517232433233920
     # 2nd from id=406555888607322112
@@ -180,32 +183,38 @@ def concatenate_done_tweets():
     tweet_id_list_db = insert_to_table.select_all_tweets()
     for filename in filenames:
         if filename == 'DATA/goldenStandard/done_tweet.csv':
-            tweets_list, tweets_id_list = read_done_tweets_file(filename, None, None, tweets_list, tweets_id_list)
+            tweets_list, tweets_id_list = read_done_tweets_file(filename, None, None, tweets_list,
+                                                                tweets_id_list, cursor, connection)
         if filename == 'DATA/goldenStandard/erb-tweet_to_edit.xlsx':
             tweets_list, tweets_id_list = read_done_tweets_file(filename, None, 3820,
-                                                                tweets_list, tweets_id_list)
+                                                                tweets_list, tweets_id_list, cursor, connection)
         if filename == 'DATA/goldenStandard/tweet_to_edit-TS.xlsx':
             tweets_list, tweets_id_list = read_done_tweets_file(filename, 6161, None,
-                                                                tweets_list, tweets_id_list)
+                                                                tweets_list, tweets_id_list, cursor, connection)
         if filename == 'DATA/goldenStandard/tweet_to_edit_part2.xlsx':
             tweets_list, tweets_id_list = read_done_tweets_file(filename, 3820, 6161,
-                                                                tweets_list, tweets_id_list)
+                                                                tweets_list, tweets_id_list, cursor, connection)
     difference_list = set()
     for tweet_id in tweet_id_list_db:
         if tweet_id not in tweets_id_list:
             difference_list.add(tweet_id)
+    # find additional tweets
     print 'There are ', len(difference_list), ' tweets to be reviewed.'
-    # annotatedData_stat.segments_in_tweet(tweets_list)
-    # write_to.write_to_xlsx_file_final(tweets_list, 'DATA/goldenStandard/final_tweets_done.xlsx')
-    insert_to_table.insert_annotated_tweets_to_segment_table(tweets_list)
+    # rebuild conversations + write original annotations
+    write_to.write_to_xlsx_file_final(tweets_list, 'DATA/goldenStandard/final_tweets_done.xlsx')
+    # write_to.write_to_xls_pure_annotation('DATA/goldenStandard/test.xlsx')
+    # insert_to_table.insert_annotated_tweets_to_segment_table(tweets_list)
     return tweets_list, difference_list
 
 
-def read_done_tweets_file(filename, start, stop, tweets_list, tweets_id_list):
+def read_done_tweets_file(filename, start, stop, tweets_list, tweets_id_list, cursor, connection):
+    tweets_list_db = postgres_queries.find_all_tweets_id(cursor)
     tweet = None
+    # new_tweets = set()
     # read_data = True
     workbook = xlrd.open_workbook(filename)
     worksheet = workbook.sheet_by_name('Sheet1')
+    # previous_tweet = annotated_tweet_class.AnnotatedTweet('', '')
     if stop is None:
         num_rows = worksheet.nrows - 1
     else:
@@ -240,6 +249,12 @@ def read_done_tweets_file(filename, start, stop, tweets_list, tweets_id_list):
                     token = worksheet.cell_value(curr_row, 1)
                     da = str(worksheet.cell_value(curr_row, 6))
                     tweet.set_token(offset, token, da)
+                    # if int(tweet_id) not in tweets_list_db:
+                    #     # print tweet_id
+                    #     new_tweets.add(tweet_id)
+                    #     if len(previous_tweet.get_tweet_id()) != 0:
+                    #         insert_to_table.insert_missing_tweet(tweet, previous_tweet, cursor, connection)
+                    # previous_tweet = copy(tweet)
         if curr_row == num_rows:
             if tweet is not None:
                 tweet.set_segments()
