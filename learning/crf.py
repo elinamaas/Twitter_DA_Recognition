@@ -3,7 +3,7 @@ from postgres import postgres_queries, update_table
 __author__ = 'snownettle'
 
 
-def run_crf(train_set, test_set, taxonomy, cursor, connection):
+def run_crf(train_set, test_set, taxonomy, cursor, connection, settings):
     da_id_taxonomy = find_da_id(taxonomy, cursor)
     X_train, y_train = train_crf(train_set, taxonomy)
     X_test = [conversation2branch(conversation, taxonomy) for conversation in test_set]
@@ -48,7 +48,7 @@ def recognized_da_segments(recognized_segments_da, dialog_act_name, da_id_taxono
     return recognized_segments_da
 
 
-def train_crf(train_set, taxonomy):
+def train_crf(train_set, taxonomy, settings):
     X_train = list()
     y_train = list()
     for i in range(len(train_set)):
@@ -58,7 +58,7 @@ def train_crf(train_set, taxonomy):
             X_branch = list()
             y_branch = list()
             for k in range(len(train_set[i][j].branch)): # segmetns
-                features = segment2features(train_set[i][j], k, taxonomy)
+                features = segment2features(train_set[i][j], k, taxonomy, settings)
                 da = train_set[i][j].branch[k].get_da_by_taxonomy(taxonomy)
                 X_branch.append(features)
                 y_branch.append(da)
@@ -69,7 +69,7 @@ def train_crf(train_set, taxonomy):
     return X_train, y_train
 
 
-def segment2features(branch, i, taxonomy):
+def segment2features(branch, i, taxonomy, settings):
     segments = branch.branch
     segment = segments[i]
     feature = segment.features
@@ -92,12 +92,20 @@ def segment2features(branch, i, taxonomy):
         'first_verb=%s' % feature.features['first_verb'],
         'imperative=%s' % feature.features['imperative'],
         'oder=%s' % feature.features['oder']
-        # 'embeddings=%s' % feature.word2vec,
-        # 'lang_features=%s' % language_features
     ]
+    if settings[2] == 2 or settings[2] == 4:
+        features.extend(['lang_features=%s' % language_features])
+    elif settings[2] == 3:
+        features.extend(['embeddings=%s' % feature.word2vec])
     if i > 0:
         segment1 = segments[i-1]
         feature1 = segment1.features
+        if taxonomy == 'full':
+            language_features1 = feature1.language_features_full
+        elif taxonomy == 'reduced':
+            language_features1 = feature1.language_features_reduced
+        else:
+            language_features1 = feature1.language_features_minimal
         features.extend([
             '-1length=%s' % feature1.features['length'],
             '-1pos=%s' % feature1.features['pos'],
@@ -110,15 +118,23 @@ def segment2features(branch, i, taxonomy):
             '-1question_words=%s' % feature1.features['question_words'],
             '-1first_verb=%s' % feature1.features['first_verb'],
             '-1imperative=%s' % feature1.features['imperative'],
-            '-1oder=%s' % feature1.features['oder'] #,
-            # '-1embeddings=%s' % feature1.word2vec,
-            # 'lang_features=%s' % language_features
+            '-1oder=%s' % feature1.features['oder']
         ])
+        if settings[2] == 2 or settings[2] == 4:
+            features.extend(['-1lang_features=%s' % language_features1])
+        elif settings[2] == 3:
+            features.extend(['-1embeddings=%s' % feature1.word2vec])
     else:
         features.append('BB')
     if i < len(segments)-1:
         segment1 = segments[i+1]
         feature1 = segment1.features
+        if taxonomy == 'full':
+            language_features1 = feature1.language_features_full
+        elif taxonomy == 'reduced':
+            language_features1 = feature1.language_features_reduced
+        else:
+            language_features1 = feature1.language_features_minimal
         features.extend([
             '+1length=%s' % feature1.features['length'],
             '+1pos=%s' % feature1.features['pos'],
@@ -131,10 +147,13 @@ def segment2features(branch, i, taxonomy):
             '+1question_words=%s' % feature1.features['question_words'],
             '+1first_verb=%s' % feature1.features['first_verb'],
             '+1imperative=%s' % feature1.features['imperative'],
-            '+1oder=%s' % feature1.features['oder']#,
-            # '+1embeddings=%s' % feature1.word2vec,
-            # 'lang_features=%s' % language_features
+            '+1oder=%s' % feature1.features['oder']
         ])
+        if settings[2] == 2 or settings[2] == 4:
+            features.extend(['+1lang_features=%s' % language_features1])
+        elif settings[2] == 3:
+            features.extend(['+1embeddings=%s' % feature1.word2vec])
+
     else:
         features.append('EB')
 

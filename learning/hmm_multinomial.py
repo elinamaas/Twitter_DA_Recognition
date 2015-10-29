@@ -10,15 +10,15 @@ __author__ = 'snownettle'
 #hidden markov model
 
 
-def calculate_hmm_m(training_set, test_set, taxonomy, cursor, connection):
+def calculate_hmm_m(training_set, test_set, taxonomy, cursor, connection, settings):
     da_id_taxonomy = find_da_id(taxonomy, cursor)
     states, start_probability, transition_probability = start_transition_probability_extraction(training_set, taxonomy)
     n_states = len(states)
 
-    feature_list, emissions = extract_features_training_set(training_set, taxonomy, states)
+    feature_list, emissions = extract_features_training_set(training_set, taxonomy, states, settings)
 
     # print model.transmat_
-    con_pathes, test_obs, emissions = extract_features_test_set(test_set, taxonomy, feature_list, emissions)
+    con_pathes, test_obs, emissions = extract_features_test_set(test_set, taxonomy, feature_list, emissions, settings)
 
     model = MultinomialHMM(n_components=n_states)
     model._set_startprob(start_probability)
@@ -32,7 +32,7 @@ def update_emissions(emissions):
     return new_emissions
 
 
-def extract_features_training_set(training_set, taxonomy, states):
+def extract_features_training_set(training_set, taxonomy, states, settings):
     feature_list = list()
     emissions = collections.defaultdict(dict)
     for conversation in training_set:
@@ -42,7 +42,7 @@ def extract_features_training_set(training_set, taxonomy, states):
                 segment = segments[i]
                 da = segment.get_da_by_taxonomy(taxonomy)
                 feature = segment.features
-                feature = convert_feature_to_list(feature, taxonomy)
+                feature = convert_feature_to_list(feature, taxonomy, settings)
                 feature_index = find_feature_index(feature, feature_list)
                 if feature_index is None:
                     feature_list.append(feature)
@@ -53,7 +53,7 @@ def extract_features_training_set(training_set, taxonomy, states):
     return feature_list, emissions_probability
 
 
-def extract_features_test_set(data_set, taxonomy, feature_list, emissions):
+def extract_features_test_set(data_set, taxonomy, feature_list, emissions, settings):
     features_list = list()
     conversation_pathes_tweet_id = list()
     observations = list()
@@ -71,7 +71,7 @@ def extract_features_test_set(data_set, taxonomy, feature_list, emissions):
                 start_offset = segment.start_offset
                 end_offset = segment.end_offset
                 feature = segment.features
-                feature = convert_feature_to_list(feature, taxonomy)
+                feature = convert_feature_to_list(feature, taxonomy, settings)
                 feature_index = find_feature_index(feature, feature_list)
                 if feature_index is None:
                     feature_list.append(feature)
@@ -95,7 +95,7 @@ def find_feature_index(feature, feature_list):
     return None
 
 
-def convert_feature_to_list(feature, taxonomy):
+def convert_feature_to_list(feature, taxonomy, settings):
     feature_set = list()
     feature_set.append(feature.features['length'])
     feature_set.append(feature.features['root_user'])
@@ -110,15 +110,17 @@ def convert_feature_to_list(feature, taxonomy):
     feature_set.append(feature.features['imperative'])
     feature_set.append(feature.features['oder'])
 
-    # for v in feature.word2vec:
-    #     feature_set.append(v)
+    ###############################
     # language features from tf-idf
-    # if taxonomy == 'full':
-    #     language_features = feature.language_features_full
-    # elif taxonomy == 'reduced':
-    #     language_features = feature.language_features_reduced
-    # else:
-    #     language_features = feature.language_features_minimal
-    # for token in language_features:
-    #     feature_set.append(token)
+    ##############################
+    if settings[2] == 2 or settings[2] == 4:
+        if taxonomy == 'full':
+            language_features = feature.language_features_full
+        elif taxonomy == 'reduced':
+            language_features = feature.language_features_reduced
+        else:
+            language_features = feature.language_features_minimal
+        for token in language_features:
+            feature_set.append(token)
+
     return feature_set

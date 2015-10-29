@@ -11,12 +11,12 @@ __author__ = 'snownettle'
 #hidden markov model
 
 
-def calculate_hmm_g(training_set, test_set, taxonomy, cursor, connection):
+def calculate_hmm_g(training_set, test_set, taxonomy, cursor, connection, settings):
     da_id_taxonomy = find_da_id(taxonomy, cursor)
     states, start_probability, transition_probability = start_transition_probability_extraction(training_set, taxonomy)
     n_states = len(states)
 
-    feature_list = extract_features_training_set_gaus(training_set, taxonomy)
+    feature_list = extract_features_training_set_gaus(training_set, taxonomy, settings)
     n_features = len(feature_list[states[0]][0])
     mean = calculate_means(states, feature_list, n_features)
     covariance = calculate_covariance(states, feature_list, n_features)
@@ -28,7 +28,7 @@ def calculate_hmm_g(training_set, test_set, taxonomy, cursor, connection):
     model.means_ = mean
     model.covars_ = covariance
 
-    test_seq, con_pathes = extract_features_test_set_gaus(test_set, taxonomy)
+    test_seq, con_pathes = extract_features_test_set_gaus(test_set, taxonomy, settings)
     da_predictions(test_seq, model, con_pathes, states, da_id_taxonomy, taxonomy, cursor, connection)
 
 
@@ -153,7 +153,7 @@ def is_pos_def(x):
     return np.all(np.linalg.eigvals(x) > 0)
 
 
-def extract_features_training_set_gaus(training_set, taxonomy):
+def extract_features_training_set_gaus(training_set, taxonomy, settings):
     means = collections.defaultdict(list)
     for conversation in training_set:
         for branch in conversation:
@@ -162,13 +162,13 @@ def extract_features_training_set_gaus(training_set, taxonomy):
                 segment = segments[i]
                 da = segment.get_da_by_taxonomy(taxonomy)
                 feature = segment.features
-                feature_set = convert_features(feature, taxonomy)
+                feature_set = convert_features(feature, taxonomy, settings)
                 means[da].append(feature_set)
 
     return means
 
 
-def convert_features(feature, taxonomy):
+def convert_features(feature, taxonomy, settings):
     feature_set = list()
     feature_set.append(feature.features['length'])
     feature_set.append(convert_values(feature.features['root_user']))
@@ -183,22 +183,29 @@ def convert_features(feature, taxonomy):
     feature_set.append(convert_values(feature.features['imperative']))
     feature_set.append(convert_values(feature.features['oder']))
 
-    # for v in feature.word2vec:
-    #     feature_set.append(v)
-    # language features form tf-idf
-    # if taxonomy == 'full':
-    #     language_features = feature.language_features_full
-    # elif taxonomy == 'reduced':
-    #     language_features = feature.language_features_reduced
-    # else:
-    #     language_features = feature.language_features_minimal
-    # for token in language_features:
-    #     feature_set.append(convert_values(token))
+    if settings[2] == 2 or settings[2] == 4:
+        ###############################
+        # language features form tf-idf
+        ##############################
+        if taxonomy == 'full':
+            language_features = feature.language_features_full
+        elif taxonomy == 'reduced':
+            language_features = feature.language_features_reduced
+        else:
+            language_features = feature.language_features_minimal
+        for token in language_features:
+            feature_set.append(convert_values(token))
+    elif settings[2] == 3:
+        ###########################
+        # words embeddings
+        ##########################
+        for v in feature.word2vec:
+            feature_set.append(v)
 
     return feature_set
 
 
-def extract_features_test_set_gaus(data_set, taxonomy):
+def extract_features_test_set_gaus(data_set, taxonomy, settings):
     feature_list_conversations = list()
     conversations_pathes = list()
     for conversation in data_set:
@@ -214,7 +221,7 @@ def extract_features_test_set_gaus(data_set, taxonomy):
                 start_offset = segment.start_offset
                 end_offset = segment.end_offset
                 feature = segment.features
-                feature_set = convert_features(feature, taxonomy)
+                feature_set = convert_features(feature, taxonomy, settings)
                 segment_coordinate = (tweet_id, start_offset, end_offset)
                 feature_branch.append(feature_set)
                 coordinate_branch.append(segment_coordinate)
