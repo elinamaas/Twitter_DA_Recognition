@@ -155,7 +155,7 @@ def set_training_settings():
           '\n 4 All'
     models = input('Model: ')
     print 'Choose how many significant words from each DA should be included.'
-    tf_idf_top = input('Press number from 1 to 100: ')
+    tf_idf_top = input('Press number from 0 to 100: ')
     print 'Please, choose feature sets grom the list: \n 1. User-defined ' \
           '\n 2. User-defined + language model top ' + str(tf_idf_top)+ \
           '\n 3. User-defined + words embeddings ' \
