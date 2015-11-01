@@ -11,7 +11,7 @@ from pymongo import Connection
 
 db_name = 'DARecognition'
 collectionNameAllAnnotations = 'annotatedTwitterDataAllOntologies'
-pathToAnnotatedData = '../DATA/annotationed/webanno-projectexport/annotation'
+pathToAnnotatedData = 'DATA/annotationed/webanno-projectexport/annotation'
 pathAnnotatedDataRAW = 'DATA/annotated_tweets_raw.txt'
 
 

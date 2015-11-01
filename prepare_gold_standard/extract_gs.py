@@ -32,7 +32,7 @@ def analyze_original_data(connection, cursor):
 
     if mongoDB_configuration.check_tweets_amount(collectionAllAnnotation) == 0:
         print 'Start inserting to mongoDB...'
-        rawAnnotatedData_read.import_annotated_docs(annotatedData_path, collectionAllAnnotation)
+        rawAnnotatedData_read.import_annotated_docs(annotatedData_path, collectionAllAnnotation, cursor)
         print 'Collection ' + collectionNameAllAnnotations + ' is already existed and has ' \
               + str(mongoDB_configuration.check_tweets_amount(collectionAllAnnotation)) + ' records'
     else:

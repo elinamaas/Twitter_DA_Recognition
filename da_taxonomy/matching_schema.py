@@ -36,8 +36,8 @@ def merge_ontologies(cursor):
     for record in results:
         da_full = record[1]
         da_id_full = record[0]
-        da_reduced = match_reduced(da_id_full)
-        da_minimal = match_min(da_id_full)
+        da_reduced = match_reduced(da_id_full, cursor)
+        da_minimal = match_min(da_id_full, cursor)
         merged_ontologies[da_full] = [da_reduced, da_minimal]
     return merged_ontologies
 

@@ -15,8 +15,8 @@ import copy
 
 
 #read original annotated data, import to mongoDB
-def import_annotated_docs(directory_path, collection_annotated_data):
-    merged_ontologies = da_taxonomy.matching_schema.merge_ontologies()
+def import_annotated_docs(directory_path, collection_annotated_data, cursor):
+    merged_ontologies = da_taxonomy.matching_schema.merge_ontologies(cursor)
     conversation_id = 0
     save_conversation = False
     data = {}
@@ -50,7 +50,6 @@ def import_annotated_docs(directory_path, collection_annotated_data):
                         data = {}
 
                     elif '#id' in previous_row[0] and '#text=New Thread' not in row[0] and 'id=' in row[0]:
-                        print row
                         tweet_id = re.split('id=', row[0])[1]
                         tweet_id = re.split(' user', tweet_id)[0]
                         data = {}
