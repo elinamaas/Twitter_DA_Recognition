@@ -12,7 +12,6 @@ tokenisierung-tofix.xlsx
 *.xlsx
 *.xls
 update_da
-for_experiments
 tweet_id.txt
 conll2002-esp.crfsuite
 test_hmm_gaus.py
