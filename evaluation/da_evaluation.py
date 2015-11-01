@@ -22,7 +22,7 @@ def evaluation_taxonomy_da(taxonomy_name, cursor, settings, evaluation_values_al
     evaluation_dict = put_in_dict(evaluation_data)
     evaluation_data_micro_macro = overall_evaluation(evaluation_dict, taxonomy_name, cursor)
     overall_evaluation_values(model, evaluation_values_all,evaluation_data_micro_macro, settings, taxonomy_name, found_da)
-    if settings[4] == 'yes':
+    if settings[4] == 1:
         print_evaluation(taxonomy_name, evaluation_data, evaluation_data_micro_macro)
     # return evaluation_values_all
 
