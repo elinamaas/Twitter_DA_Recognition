@@ -1,5 +1,4 @@
 __author__ = 'snownettle'
-import pymongo
 from pymongo import Connection
 
 ##########################

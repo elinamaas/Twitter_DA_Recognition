@@ -6,6 +6,7 @@ from postgres import postgres_configuration, insert_to_table, update_table
 import rebuild_conversations
 from prepare_gold_standard.editing_annotated_tweets import tweets_to_be_reviewed
 from readData.rawAnnotatedData_read import concatenate_done_tweets
+import os
 
 
 def analyze_original_data(connection, cursor):
@@ -48,6 +49,11 @@ def analyze_original_data(connection, cursor):
     # delete non german
     german_tweets = rebuild_conversations.delete_non_german_tweets(cursor, connection)
     tweets_list = tweets_to_be_reviewed(collectionAllAnnotation, german_tweets)
+    if not os.path.exists('DATA/error_matrix/'):
+        os.makedirs('DATA/error_matrix/')
+    if not os.path.exists('DATA/goldenStandard/'):
+        os.makedirs('DATA/goldenStandard/')
+
     print '\n' + '\033[1m' + 'Full ontology'
     print '\033[0m'
     agreed, tweets_to_edit = annotated_tweets_final.iaa_ontologies(tweets_list,  ontology='full', cursor=cursor)
@@ -61,7 +67,9 @@ def analyze_original_data(connection, cursor):
 
     # merging
     annotated_tweets_final.merging(agreed, tweets_to_edit)
-    concatenate_done_tweets(cursor, connection)
+
+    # concatenate done tweets from different files
+    # concatenate_done_tweets(cursor, connection)
 
 
 
