@@ -55,8 +55,15 @@ def recognize_da(taxonomy_list, cursor, connection, data_set):
     if settings[1] == 1:
         print 'HMM Multinomial'
         for taxonomy in taxonomy_list:
-            hmm_multinomial_algorithm(taxonomy, cursor, connection, train_test_set, settings)
-            da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'MHMM')
+            if settings[2] == 5:
+                settings_new = list(settings)
+                for i in range(1, 5, 1):
+                    settings_new[2] = i
+                    hmm_multinomial_algorithm(taxonomy, cursor, connection, train_test_set, settings_new)
+                    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings_new, result_values, 'MHMM')
+            else:
+                hmm_multinomial_algorithm(taxonomy, cursor, connection, train_test_set, settings)
+                da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'MHMM')
             if settings[3] == 1:
                 print 'Confusion matrix for ' + taxonomy
                 da_evaluation.confusion_matrix(taxonomy, cursor)
@@ -64,38 +71,75 @@ def recognize_da(taxonomy_list, cursor, connection, data_set):
     elif settings[1] == 2:
         print 'HMM Gaussian'
         for taxonomy in taxonomy_list:
-            hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_set, settings)
-            da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'GHMM')
+            if settings[2] == 5:
+                settings_new = list(settings)
+                for i in range(1, 5, 1):
+                    settings_new[2] = i
+                    hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_set, settings_new)
+                    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings_new, result_values, 'GHMM')
+            else:
+                hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_set, settings)
+                da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'GHMM')
             if settings[3] == 1:
                 print 'Confusion matrix for ' + taxonomy
                 da_evaluation.confusion_matrix(taxonomy, cursor)
-    elif settings[2] == 3:
+    elif settings[1] == 3:
         print 'CRF'
         for taxonomy in taxonomy_list:
-            conditional_random_fields(taxonomy, cursor, connection, train_test_set, settings)
-            da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'CRF')
+            if settings[2] == 5:
+                settings_new = list(settings)
+                for i in range(1, 5, 1):
+                    settings_new[2] = i
+                    conditional_random_fields(taxonomy, cursor, connection, train_test_set, settings_new)
+                    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings_new, result_values, 'CRF')
+            else:
+                conditional_random_fields(taxonomy, cursor, connection, train_test_set, settings)
+                da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'CRF')
             if settings[3] == 1:
                 print 'Confusion matrix for ' + taxonomy
                 da_evaluation.confusion_matrix(taxonomy, cursor)
     else:
         for taxonomy in taxonomy_list:
             print 'HMM Multinomial'
-            hmm_multinomial_algorithm(taxonomy, cursor, connection, train_test_set, settings)
-            da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'MHMM')
+            if settings[2] == 5:
+                settings_new = list(settings)
+                for i in range(1, 5, 1):
+                    settings_new[2] = i
+                    hmm_multinomial_algorithm(taxonomy, cursor, connection, train_test_set, settings_new)
+                    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings_new, result_values, 'MHMM')
+            else:
+                hmm_multinomial_algorithm(taxonomy, cursor, connection, train_test_set, settings)
+                da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'MHMM')
+
             if settings[3] == 1:
                 print 'Confusion matrix for ' + taxonomy
                 da_evaluation.confusion_matrix(taxonomy, cursor)
 
             print 'HMM Gaussian'
-            hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_set, settings)
-            da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'GHMM')
+            if settings[2] == 5:
+                settings_new = list(settings)
+                for i in range(1, 5, 1):
+                    settings_new[2] = i
+                    hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_set, settings_new)
+                    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings_new, result_values, 'GHMM')
+            else:
+                hmm_gaussian_algorithm(taxonomy, cursor, connection, train_test_set, settings)
+                da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'GHMM')
+
             if settings[3] == 1:
                 print 'Confusion matrix for ' + taxonomy
                 da_evaluation.confusion_matrix(taxonomy, cursor)
 
             print 'CRF'
-            conditional_random_fields(taxonomy, cursor, connection, train_test_set, settings)
-            da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'CRF')
+            if settings[2] == 5:
+                settings_new = list(settings)
+                for i in range(1, 5, 1):
+                    settings_new[2] = i
+                    conditional_random_fields(taxonomy, cursor, connection, train_test_set, settings_new)
+                    da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings_new, result_values, 'CRF')
+            else:
+                conditional_random_fields(taxonomy, cursor, connection, train_test_set, settings)
+                da_evaluation.evaluation_taxonomy_da(taxonomy, cursor, settings, result_values, 'CRF')
             if settings[3] == 1:
                 print 'Confusion matrix for ' + taxonomy
                 da_evaluation.confusion_matrix(taxonomy, cursor)
@@ -114,8 +158,10 @@ def set_training_settings():
     tf_idf_top = input('Press number from 1 to 100: ')
     print 'Please, choose feature sets grom the list: \n 1. User-defined ' \
           '\n 2. User-defined + language model top ' + str(tf_idf_top)+ \
-          '\n 3. User-defined + words embeddings \n 4. User-defined all'
-    feature_set = input('Press number from 1 to 4:')
+          '\n 3. User-defined + words embeddings ' \
+          '\n 4. User-defined + language model + words embeddings ' \
+          '\n 5. ALL'
+    feature_set = input('Press number from 1 to 5:')
     print 'Do you want to see all output?'
     output = input('yes(1)/no(0): ')
     print 'Do you want to observe confusion matrix: '

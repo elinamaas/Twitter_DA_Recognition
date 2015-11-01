@@ -5,8 +5,8 @@ __author__ = 'snownettle'
 
 def run_crf(train_set, test_set, taxonomy, cursor, connection, settings):
     da_id_taxonomy = find_da_id(taxonomy, cursor)
-    X_train, y_train = train_crf(train_set, taxonomy)
-    X_test = [conversation2branch(conversation, taxonomy) for conversation in test_set]
+    X_train, y_train = train_crf(train_set, taxonomy, settings)
+    X_test = [conversation2branch(conversation, taxonomy, settings) for conversation in test_set]
     trainer = pycrfsuite.Trainer(verbose=False)
     for i in range(len(X_train)):
         X_conversation = X_train[i]
@@ -160,12 +160,12 @@ def segment2features(branch, i, taxonomy, settings):
     return features
 
 
-def branch2features(branch, taxonomy):
-    return [segment2features(branch, i, taxonomy) for i in range(len(branch.branch))]
+def branch2features(branch, taxonomy, settings):
+    return [segment2features(branch, i, taxonomy, settings) for i in range(len(branch.branch))]
 
 
-def conversation2branch(conversation, taxonomy):
-    return [branch2features(branch, taxonomy) for branch in conversation]
+def conversation2branch(conversation, taxonomy, settings):
+    return [branch2features(branch, taxonomy, settings) for branch in conversation]
 
 
 def find_da_id(taxonomy, cursor):

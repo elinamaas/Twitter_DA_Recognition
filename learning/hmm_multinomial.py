@@ -113,7 +113,7 @@ def convert_feature_to_list(feature, taxonomy, settings):
     ###############################
     # language features from tf-idf
     ##############################
-    if settings[2] == 2 or settings[2] == 4:
+    if settings[2] == 2 or settings[2] == 5:
         if taxonomy == 'full':
             language_features = feature.language_features_full
         elif taxonomy == 'reduced':
