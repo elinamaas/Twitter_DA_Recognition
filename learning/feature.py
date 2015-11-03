@@ -9,11 +9,23 @@ __author__ = 'snownettle'
 
 class Feature:
     """
-        In this Class is described features that are int the utterance
+        Feature extraction from a segment
         Features:
         1. Length : length of the utterance
         2. Root user: Is the utterancce belongs to the root user or not :type: root_user: boolean
         3. Position of the utterance in tweet. Is it first: :type: pos: int
+        4. Link: is there a link in a segment :type: link: boolean
+        5. Question mark :type: boolean
+        6. Exclamation mark :type: boolean
+        7. Hashtag :type: boolean
+        8. Emoticons :type: boolean
+        9. Question words :type: boolean
+        10. First verb :type: boolean
+        11. First verb imperativ :type: boolean
+        12. Oder :type: boolean
+        13. Language features: a list with boolens, each item represents a words.
+                               True - this word appears in a segment, otherwise False :type language_features: list
+        14. Word embeddings :type: vector
 
 
     """

@@ -55,7 +55,7 @@ def calculate_means(states, means_list, n_feature):
 
 
 def calculate_covariance(states, feature_list, n_features):
-    # should be checked. rewrite. no it doesnt work, that's why we return random
+    # due to shortage of data we can't calculate the covariance matrix, that's why we return random
 
     np.set_printoptions(threshold='nan')
     random = np.array([make_spd_matrix(n_features, random_state=0) + np.eye(n_features) for x in range(len(states))])
@@ -66,27 +66,14 @@ def calculate_covariance(states, feature_list, n_features):
     #     # feat_transpose = np.transpose(f_list_da)
     #     arr = np.cov(np.array(f_list_da), rowvar=0)
     #     # adjusted_cov = arr + 0.2*np.identity(arr.shape[0])
-    #
-    #
     #     if np.isnan(arr).all():
-    #         print 'random'
     #         arr = random[i]
-    #
-    #
     #     # arr_tr = np.transpose(arr)
     #     # new_arr = np.multiply(arr, arr_tr)
     #
-    #
-    #
     #     # arr[arr == 0.] = 0.00001
-    #
-    #
     #     # covariance.append(new_arr)
-    #     # print arr
-    #
-    #
-    #     # print str(is_pos_def(arr)) + str(states[i])
-    #     # print arr
+
     #     # diagonal = arr.diagonal()
     #     # print (arr.transpose() == arr).all()
     #     a = 0
@@ -97,22 +84,16 @@ def calculate_covariance(states, feature_list, n_features):
     #             arr = random[i]
     #     if not (arr.transpose() == arr).all():
     #         arr = make_summetric(arr)
-    #
-    #
-    #
-    #     print states[i]
-    #     print (arr.transpose() == arr).all()
+
     #     # np.linalg.cholesky(arr)
     #     covariance.append(arr)
     #     # t = np.linalg.cholesky(adjusted_cov)
     # covariance = np.array(covariance)
-    #
-    # # print is_pos_def(covariance)
+
     #
     # np.linalg.cholesky(covariance)
     # # covariance_tr = np.transpose(covariance)
     # # cov = np.multiply(covariance, covariance_tr)
-    # # print covariance
     # return covariance
 
     return random
@@ -169,6 +150,8 @@ def extract_features_training_set_gaus(training_set, taxonomy, settings):
 
 
 def convert_features(feature, taxonomy, settings):
+    # convert bolleans to +1 (True) and -1 (False)
+
     feature_set = list()
     feature_set.append(feature.features['length'])
     feature_set.append(convert_values(feature.features['root_user']))

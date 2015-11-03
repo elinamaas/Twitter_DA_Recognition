@@ -70,6 +70,7 @@ def train_crf(train_set, taxonomy, settings):
 
 
 def segment2features(branch, i, taxonomy, settings):
+    # current segment, previous segment and the next segment
     segments = branch.branch
     segment = segments[i]
     feature = segment.features

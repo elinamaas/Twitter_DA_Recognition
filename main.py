@@ -20,8 +20,9 @@ annotatedData_stat.gold_standard_stats(cursor)
 
 taxonomy_list = ['full', 'reduced', 'minimal']
 
-# predictions
+# 10-fold
 data_set = fold_splitter(cursor, embeddings, word_id)
+# predictions
 supervised_learning.recognize_da(taxonomy_list, cursor, connection, data_set)
 
 postgres_configuration.close_connection(connection)
