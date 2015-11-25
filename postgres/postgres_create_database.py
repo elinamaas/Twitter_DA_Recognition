@@ -30,13 +30,13 @@ def create_db_insert(connection, cursor, file):
         print 'Gold standard is inserted'
 
     else:
-        # truncate_tweet_table(connection, cursor)
-        # print 'Start inserting gold standard'
-        # list_of_tweets = editedAnnotatedData.import_golden_standard_postgres(file, cursor, connection)
-        # print 'Insert to segmentation table'
-        # insert_to_table.insert_annotated_table(list_of_tweets, cursor, connection)
-        # # insert_to_table.make_segmentation_utterance_table(cursor, connection)
-        # print 'Update tweet position in conversation'
-        # update_table.update_position_conversation_column(cursor, connection)
+        truncate_tweet_table(connection, cursor)
+        print 'Start inserting gold standard'
+        list_of_tweets = editedAnnotatedData.import_golden_standard_postgres(file, cursor, connection)
+        print 'Insert to segmentation table'
+        insert_to_table.insert_annotated_table(list_of_tweets, cursor, connection)
+        # insert_to_table.make_segmentation_utterance_table(cursor, connection)
+        print 'Update tweet position in conversation'
+        update_table.update_position_conversation_column(cursor, connection)
 
         print 'Gold standard is inserted'
